@@ -121,11 +121,14 @@ namespace TRRandomizerCore.Processors
                 // the mods are applied in this instance too.
                 AmendBossFight(level);
             }
-            else if ((level.Is(TR3LevelNames.COASTAL) && !level.IsCoastalSequence) || (level.Is(TR3LevelNames.MADUBU) && !level.IsMadubuSequence))
+            else if (!ScriptEditor.Edition.IsCommunityPatch)
             {
-                // Coastal Village and Madubu spikes are raised on initialisation in the game, based
-                // on the level sequencing. So if out of sequence, perform the raising here.
-                AmendSouthPacificSpikes(level);
+                if ((level.Is(TR3LevelNames.COASTAL) && !level.IsCoastalSequence) || (level.Is(TR3LevelNames.MADUBU) && !level.IsMadubuSequence))
+                {
+                    // Coastal Village and Madubu spikes are raised on initialisation in the game, based
+                    // on the level sequencing. So if out of sequence, perform the raising here.
+                    AmendSouthPacificSpikes(level);
+                }
             }
 
             // #277 Make sure levels have artefact menu models because these vary based on original sequencing.

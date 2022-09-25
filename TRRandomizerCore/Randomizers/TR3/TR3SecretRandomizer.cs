@@ -32,6 +32,8 @@ namespace TRRandomizerCore.Randomizers
         private static readonly List<int> _devRooms = null;
         private static readonly ushort _devModeSecretCount = 6;
 
+        public static readonly ushort MaxSecretCount = 8;
+
         private Dictionary<string, List<Location>> _locations, _unarmedLocations;
 
         private int _proxEvaluationCount;
@@ -58,6 +60,11 @@ namespace TRRandomizerCore.Randomizers
             _unarmedLocations = JsonConvert.DeserializeObject<Dictionary<string, List<Location>>>(ReadResource(@"TR3\Locations\unarmed_locations.json"));
 
             SetMessage("Randomizing secrets - loading levels");
+
+            if (ScriptEditor.Edition.IsCommunityPatch)
+            {
+                SetSecretCounts();
+            }
 
             List<SecretProcessor> processors = new List<SecretProcessor>();
             for (int i = 0; i < _maxThreads; i++)
@@ -105,6 +112,40 @@ namespace TRRandomizerCore.Randomizers
             if (_processingException != null)
             {
                 _processingException.Throw();
+            }
+        }
+
+        private void SetSecretCounts()
+        {
+            List<TR3ScriptedLevel> levels = Levels.FindAll(l => !l.Is(TR3LevelNames.ASSAULT));
+
+            switch (Settings.SecretCountMode)
+            {
+                case TRSecretCountMode.Shuffled:
+                    List<ushort> defaultCounts = levels.Select(l => l.NumSecrets).ToList();
+                    foreach (TR3ScriptedLevel level in levels)
+                    {
+                        int countIndex = _generator.Next(0, defaultCounts.Count);
+                        level.NumSecrets = defaultCounts[countIndex];
+                        defaultCounts.RemoveAt(countIndex);
+                    }
+                    break;
+
+                case TRSecretCountMode.Customized:
+                    int min = (int)Math.Max(1, Settings.MinSecretCount);
+                    int max = (int)Math.Min(MaxSecretCount, Settings.MaxSecretCount) + 1;
+                    foreach (TR3ScriptedLevel level in levels)
+                    {
+                        level.NumSecrets = (ushort)_generator.Next(min, max);
+                    }
+                    break;
+
+                default:
+                    foreach (TR3ScriptedLevel level in levels)
+                    {
+                        level.SetNumSecretsToOriginalSequence();
+                    }
+                    break;
             }
         }
 

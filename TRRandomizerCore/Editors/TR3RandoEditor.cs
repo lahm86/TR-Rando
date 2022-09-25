@@ -43,6 +43,11 @@ namespace TRRandomizerCore.Editors
                 target++;
             }
 
+            if (_edition.IsCommunityPatch && Settings.RandomizeWeather)
+            {
+                target += numLevels;
+            }
+
             if (Settings.RandomizeSequencing)
             {
                 target += numLevels;
@@ -138,6 +143,19 @@ namespace TRRandomizerCore.Editors
                         SaveMonitor = monitor,
                         Settings = Settings
                     }.Randomize(Settings.GameStringsSeed);
+                }
+
+                if (!monitor.IsCancelled && _edition.IsCommunityPatch && Settings.RandomizeWeather)
+                {
+                    monitor.FireSaveStateBeginning(TRSaveCategory.Custom, "Randomizing weather");
+                    new TR3WeatherRandomizer
+                    {
+                        ScriptEditor = tr23ScriptEditor,
+                        Levels = levels,
+                        BasePath = wipDirectory,
+                        SaveMonitor = monitor,
+                        Settings = Settings
+                    }.Randomize(Settings.WeatherSeed);
                 }
 
                 if (!monitor.IsCancelled && Settings.RandomizeSequencing)

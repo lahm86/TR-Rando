@@ -59,7 +59,7 @@ namespace TRRandomizerCore.Levels
         /// <summary>
         /// The exposure meter is hard-coded to the Antarctica and RX-Tech Mines level sequences.
         /// </summary>
-        public bool HasExposureMeter => Sequence == 16 || Sequence == 17;
+        public bool HasExposureMeter => Script.HasColdWater;
 
         /// <summary>
         /// Whether or not this level is in the sequence of original Coastal Village.

@@ -120,6 +120,15 @@ namespace TRRandomizerCore.Editors
         public bool VfxCaustics { get; set; }
         public bool VfxWave { get; set; }
 
+        public bool RandomizeWeather { get; set; }
+        public int WeatherSeed { get; set; }
+        public uint RainLevelCount { get; set; }
+        public uint SnowLevelCount { get; set; }
+        public uint ColdLevelCount { get; set; }
+        public bool RainyAssaultCourse { get; set; }
+        public bool SnowyAssaultCourse { get; set; }
+        public bool ColdAssaultCourse { get; set; }
+
         public bool RandomizeStartingHealth { get; set; }
         public int HealthSeed { get; set; }
         public uint MinStartingHealth { get; set; }
@@ -243,6 +252,15 @@ namespace TRRandomizerCore.Editors
             VfxCaustics = config.GetBool(nameof(VfxCaustics));
             VfxWave = config.GetBool(nameof(VfxWave));
 
+            RandomizeWeather = config.GetBool(nameof(RandomizeWeather));
+            WeatherSeed = config.GetInt(nameof(WeatherSeed), defaultSeed);
+            RainLevelCount = config.GetUInt(nameof(RainLevelCount), 2);
+            SnowLevelCount = config.GetUInt(nameof(SnowLevelCount), 2);
+            ColdLevelCount = config.GetUInt(nameof(ColdLevelCount), 2);
+            RainyAssaultCourse = config.GetBool(nameof(RainyAssaultCourse));
+            SnowyAssaultCourse = config.GetBool(nameof(SnowyAssaultCourse));
+            ColdAssaultCourse = config.GetBool(nameof(ColdAssaultCourse));
+
             RandomizeStartingHealth = config.GetBool(nameof(RandomizeStartingHealth));
             HealthSeed = config.GetInt(nameof(HealthSeed), defaultSeed);
             MinStartingHealth = config.GetUInt(nameof(MinStartingHealth), 1000);
@@ -360,6 +378,15 @@ namespace TRRandomizerCore.Editors
             config[nameof(VfxRoom)] = VfxRoom;
             config[nameof(VfxCaustics)] = VfxCaustics;
             config[nameof(VfxWave)] = VfxWave;
+
+            config[nameof(RandomizeWeather)] = RandomizeWeather;
+            config[nameof(WeatherSeed)] = WeatherSeed;
+            config[nameof(RainLevelCount)] = RainLevelCount;
+            config[nameof(SnowLevelCount)] = SnowLevelCount;
+            config[nameof(ColdLevelCount)] = ColdLevelCount;
+            config[nameof(RainyAssaultCourse)] = RainyAssaultCourse;
+            config[nameof(SnowyAssaultCourse)] = SnowyAssaultCourse;
+            config[nameof(ColdAssaultCourse)] = ColdAssaultCourse;
 
             config[nameof(RandomizeStartingHealth)] = RandomizeStartingHealth;
             config[nameof(HealthSeed)] = HealthSeed;

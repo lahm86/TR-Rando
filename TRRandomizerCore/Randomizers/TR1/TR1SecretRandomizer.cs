@@ -33,7 +33,7 @@ namespace TRRandomizerCore.Randomizers
         private static readonly string _edgeInfoMsg = "Adding extra tile edge trigger for {0} [X={1}, Y={2}, Z={3}, R={4}]";
         private static readonly List<int> _devRooms = null;
 
-        private static readonly ushort _maxSecretCount = 5;
+        public static readonly ushort MaxSecretCount = 5;
 
         private Dictionary<string, List<Location>> _locations, _unarmedLocations;
 
@@ -153,7 +153,7 @@ namespace TRRandomizerCore.Randomizers
 
                 case TRSecretCountMode.Customized:
                     int min = (int)Math.Max(1, Settings.MinSecretCount);
-                    int max = (int)Math.Min(_maxSecretCount, Settings.MaxSecretCount) + 1;
+                    int max = (int)Math.Min(MaxSecretCount, Settings.MaxSecretCount) + 1;
                     foreach (TR1ScriptedLevel level in levels)
                     {
                         level.NumSecrets = (ushort)_generator.Next(min, max);
@@ -296,7 +296,7 @@ namespace TRRandomizerCore.Randomizers
             // a camera per counted secret otherwise it only shows once.
             if (Settings.UseRewardRoomCameras && rewardRoom.Cameras != null)
             {
-                double countedSecrets = Settings.DevelopmentMode ? _maxSecretCount : level.Script.NumSecrets;
+                double countedSecrets = Settings.DevelopmentMode ? MaxSecretCount : level.Script.NumSecrets;
                 rewardRoom.CameraIndices = new List<int>();
                 List<TRCamera> cameras = level.Data.Cameras.ToList();
                 for (int i = 0; i < countedSecrets; i++)
@@ -394,7 +394,7 @@ namespace TRRandomizerCore.Randomizers
             TRSecretPlacement<TREntities> secret = new TRSecretPlacement<TREntities>();
             int pickupIndex = 0;
             ushort secretIndex = 0;
-            ushort countedSecrets = _maxSecretCount;
+            ushort countedSecrets = MaxSecretCount;
             bool damagingLocationUsed = false;
             bool glitchedDamagingLocationUsed = false;
             foreach (Location location in locations)

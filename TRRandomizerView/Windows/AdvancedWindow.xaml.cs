@@ -97,10 +97,16 @@ namespace TRRandomizerView.Windows
         (
             nameof(HasHealthMode), typeof(bool), typeof(AdvancedWindow)
         );
+
         public static readonly DependencyProperty HasSecretCountModeProperty = DependencyProperty.Register
         (
             nameof(HasSecretCountMode), typeof(bool), typeof(AdvancedWindow)
-        ); 
+        );
+
+        public static readonly DependencyProperty HasWeatherModeProperty = DependencyProperty.Register
+        (
+            nameof(HasWeatherMode), typeof(bool), typeof(AdvancedWindow)
+        );
 
         public static readonly DependencyProperty ControllerProperty = DependencyProperty.Register
         (
@@ -207,6 +213,12 @@ namespace TRRandomizerView.Windows
         {
             get => (bool)GetValue(HasSecretCountModeProperty);
             set => SetValue(HasSecretCountModeProperty, value);
+        }
+
+        public bool HasWeatherMode
+        {
+            get => (bool)GetValue(HasWeatherModeProperty);
+            set => SetValue(HasWeatherModeProperty, value);
         }
 
         public ControllerOptions ControllerProxy

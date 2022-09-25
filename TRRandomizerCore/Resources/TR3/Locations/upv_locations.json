@@ -37,12 +37,8 @@
       "Angle": -32768
     }
   ],
-  "QUADCHAS.TR2": [
-    
-  ],
-  "TONYBOSS.TR2": [
-    
-  ],
+  "QUADCHAS.TR2": [],
+  "TONYBOSS.TR2": [],
   "SHORE.TR2": [
     {
       "X": 14847,
@@ -52,15 +48,9 @@
       "Angle": 0
     }
   ],
-  "CRASH.TR2": [
-    
-  ],
-  "RAPIDS.TR2": [
-    
-  ],
-  "TRIBOSS.TR2": [
-    
-  ],
+  "CRASH.TR2": [],
+  "RAPIDS.TR2": [],
+  "TRIBOSS.TR2": [],
   "ROOFS.TR2": [
     {
       "X": 27083,
@@ -90,12 +80,8 @@
       "Room": 28
     }
   ],
-  "TOWER.TR2": [
-    
-  ],
-  "OFFICE.TR2": [
-    
-  ],
+  "TOWER.TR2": [],
+  "OFFICE.TR2": [],
   "NEVADA.TR2": [
     {
       "X": 43593,
@@ -119,15 +105,9 @@
       "Room": 161
     }
   ],
-  "AREA51.TR2": [
-    
-  ],
-  "ANTARC.TR2": [
-    
-  ],
-  "MINES.TR2": [
-    
-  ],
+  "AREA51.TR2": [],
+  "ANTARC.TR2": [],
+  "MINES.TR2": [],
   "CITY.TR2": [
     {
       "X": 22001,
@@ -137,9 +117,7 @@
       "Angle": -16384
     }
   ],
-  "CHAMBER.TR2": [
-    
-  ],
+  "CHAMBER.TR2": [],
   "STPAUL.TR2": [
     {
       "X": 41522,
@@ -147,6 +125,14 @@
       "Z": 55713,
       "Room": 5,
       "Angle": -16384
+    }
+  ],
+  "HOUSE.TR2": [
+    {
+      "X": 39424,
+      "Y": 4608,
+      "Z": 37376,
+      "Room": 72
     }
   ]
 }

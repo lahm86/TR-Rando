@@ -96,6 +96,7 @@ namespace TRRandomizerCore
         public int DefaultUnarmedLevelCount => ScriptEditor.Edition.UnarmedLevelCount;
         public int DefaultAmmolessLevelCount => ScriptEditor.Edition.AmmolessLevelCount;
         public int DefaultSunsetCount => ScriptEditor.Edition.SunsetLevelCount;
+        public int MaxLevelSecretCount => _support.GetMaximumLevelSecretCount(_editor.Edition);
 
         public bool RandomizeLevelSequencing
         {
@@ -1669,6 +1670,54 @@ namespace TRRandomizerCore
         {
             get => LevelRandomizer.VfxWave;
             set => LevelRandomizer.VfxWave = value;
+        }
+
+        public bool RandomizeWeather
+        {
+            get => LevelRandomizer.RandomizeWeather;
+            set => LevelRandomizer.RandomizeWeather = value;
+        }
+
+        public int WeatherSeed
+        {
+            get => LevelRandomizer.WeatherSeed;
+            set => LevelRandomizer.WeatherSeed = value;
+        }
+
+        public uint RainLevelCount
+        {
+            get => LevelRandomizer.RainLevelCount;
+            set => LevelRandomizer.RainLevelCount = value;
+        }
+
+        public uint SnowLevelCount
+        {
+            get => LevelRandomizer.SnowLevelCount;
+            set => LevelRandomizer.SnowLevelCount = value;
+        }
+
+        public uint ColdLevelCount
+        {
+            get => LevelRandomizer.ColdLevelCount;
+            set => LevelRandomizer.ColdLevelCount = value;
+        }
+
+        public bool RainyAssaultCourse
+        {
+            get => LevelRandomizer.RainyAssaultCourse;
+            set => LevelRandomizer.RainyAssaultCourse = value;
+        }
+
+        public bool SnowyAssaultCourse
+        {
+            get => LevelRandomizer.SnowyAssaultCourse;
+            set => LevelRandomizer.SnowyAssaultCourse = value;
+        }
+
+        public bool ColdAssaultCourse
+        {
+            get => LevelRandomizer.ColdAssaultCourse;
+            set => LevelRandomizer.ColdAssaultCourse = value;
         }
         #endregion
 

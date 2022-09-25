@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using TRGE.Core;
+using TRRandomizerCore.Randomizers;
 
 namespace TRRandomizerCore
 {
@@ -104,7 +105,8 @@ namespace TRRandomizerCore
 
         private static readonly List<TRRandomizerType> _tr3MainTypes = new List<TRRandomizerType>
         {
-            //TRRandomizerType.Weather
+            TRRandomizerType.SecretCount,
+            TRRandomizerType.Weather
         };
 
         private static readonly Dictionary<TRVersion, TRVersionSupportGroup> _supportedTypes = new Dictionary<TRVersion, TRVersionSupportGroup>
@@ -130,6 +132,12 @@ namespace TRRandomizerCore
             [TRVersion.TR1] = new List<string> { "Tomb1Main.exe", "tombati.exe" },
             [TRVersion.TR2] = new List<string> { "Tomb2.exe" },
             [TRVersion.TR3] = new List<string> { "Tomb3.exe" }
+        };
+
+        private static readonly Dictionary<TRVersion, int> _versionMaxSecrets = new Dictionary<TRVersion, int>
+        {
+            [TRVersion.TR1] = TR1SecretRandomizer.MaxSecretCount,
+            [TRVersion.TR3] = TR3SecretRandomizer.MaxSecretCount
         };
 
         public bool IsRandomizationSupported(TREdition edition)
@@ -165,6 +173,15 @@ namespace TRRandomizerCore
                 exes.AddRange(_versionExes[edition.Version]);
             }
             return exes;
+        }
+
+        public int GetMaximumLevelSecretCount(TREdition edition)
+        {
+            if (_versionMaxSecrets.ContainsKey(edition.Version) && IsRandomizationSupported(edition, TRRandomizerType.SecretCount))
+            {
+                return _versionMaxSecrets[edition.Version];
+            }
+            return -1;
         }
     }
 
