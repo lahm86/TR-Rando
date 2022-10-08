@@ -154,27 +154,56 @@ namespace TRRandomizerCore.Randomizers
             TR3ScriptedLevel assaultCourse = Levels.Find(l => l.Is(TR3LevelNames.ASSAULT));
             ISet<TR3ScriptedLevel> exlusions = new HashSet<TR3ScriptedLevel> { assaultCourse };
 
-            _wireframeLevels = Levels.RandomSelection(_generator, (int)Settings.WireframeLevelCount, exclusions: exlusions);
+            _wireframeLevels = new List<TR3ScriptedLevel>();
+            _solidLaraLevels = new List<TR3ScriptedLevel>();
+
+            List<TR3ScriptedLevel> selectedLevels = Levels.RandomSelection(_generator, (int)Settings.WireframeLevelCount, exclusions: exlusions);
             if (Settings.AssaultCourseWireframe)
             {
-                _wireframeLevels.Add(assaultCourse);
+                selectedLevels.Add(assaultCourse);
             }
 
-            if (Settings.UseSolidLaraWireframing)
+            if (ScriptEditor.Edition.IsCommunityPatch)
             {
-                _solidLaraLevels = new List<TR3ScriptedLevel>(_wireframeLevels);
-            }
-            else
-            {
-                _solidLaraLevels = _wireframeLevels.RandomSelection(_generator, _generator.Next(Math.Min(1, _wireframeLevels.Count), _wireframeLevels.Count));
+                if (Settings.WireframeMode == WireframeMode.Native)
+                {
+                    // Mark all the level script flags as Wireframed
+                    selectedLevels.ForEach(l => l.UseNativeWireframing = true);
+                    // Don't apply TRRando wireframing
+                    selectedLevels.Clear();
+                }
+                else if (Settings.WireframeMode == WireframeMode.Combination)
+                {
+                    // Retain some for TRRando wireframing, the rest will be handled natively
+                    int nativeModeCount = _generator.Next(0, selectedLevels.Count);
+                    for (int i = 0; i < nativeModeCount; i++)
+                    {
+                        TR3ScriptedLevel level = selectedLevels[_generator.Next(0, selectedLevels.Count)];
+                        level.UseNativeWireframing = true;
+                        selectedLevels.Remove(level);
+                    }
+                }
             }
 
-            if (Settings.PersistTextureVariants)
+            _wireframeLevels.AddRange(selectedLevels);
+            if (_wireframeLevels.Count > 0)
             {
-                _persistentWireColour = _wireframeColours[_generator.Next(0, _wireframeColours.Length)];
-            }
+                if (Settings.UseSolidLaraWireframing)
+                {
+                    _solidLaraLevels.AddRange(_wireframeLevels);
+                }
+                else
+                {
+                    _solidLaraLevels.AddRange(_wireframeLevels.RandomSelection(_generator, _generator.Next(Math.Min(1, _wireframeLevels.Count), _wireframeLevels.Count)));
+                }
 
-            _wireframeData.Values.ToList().ForEach(d => d.HighlightLadders = Settings.UseWireframeLadders);
+                if (Settings.PersistTextureVariants)
+                {
+                    _persistentWireColour = _wireframeColours[_generator.Next(0, _wireframeColours.Length)];
+                }
+
+                _wireframeData.Values.ToList().ForEach(d => d.HighlightLadders = Settings.UseWireframeLadders);
+            }
         }
 
         public string GetSourceVariant(AbstractTextureSource source)

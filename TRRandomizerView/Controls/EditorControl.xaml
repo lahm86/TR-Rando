@@ -324,6 +324,7 @@
                                         BoolItemsSource="{Binding Data.TextureBoolItemControls, Source={StaticResource proxy}}"
                                         HasBoolItems="True"
                                         HasTextureOptions="True"
+                                        HasNativeWireframingOptions="{Binding Data.IsNativeWireframingTypeSupported, Source={StaticResource proxy}}"
                                         ControllerProxy="{Binding Data, Source={StaticResource proxy}}">
                 </windows:AdvancedWindow>
             </ctrl:ManagedSeedAdvancedControl.AdvancedWindowToOpen>

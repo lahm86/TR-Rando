@@ -55,6 +55,7 @@ namespace TRRandomizerCore.Editors
         public bool UseSolidEnemyWireframing { get; set; }
         public bool UseDifferentWireframeColours { get; set; }
         public bool UseWireframeLadders { get; set; }
+        public WireframeMode WireframeMode { get; set; }
         public bool CrossLevelEnemies { get; set; }
         public bool ProtectMonks { get; set; }
         public bool DocileWillard { get; set; }
@@ -190,6 +191,7 @@ namespace TRRandomizerCore.Editors
             UseSolidEnemyWireframing = config.GetBool(nameof(UseSolidEnemyWireframing), true);
             UseDifferentWireframeColours = config.GetBool(nameof(UseDifferentWireframeColours), true);
             UseWireframeLadders = config.GetBool(nameof(UseWireframeLadders), true);
+            WireframeMode = (WireframeMode)config.GetEnum(nameof(WireframeMode), typeof(WireframeMode), WireframeMode.Simulated);
 
             RandomizeOutfits = config.GetBool(nameof(RandomizeOutfits));
             OutfitSeed = config.GetInt(nameof(OutfitSeed), defaultSeed);
@@ -317,6 +319,7 @@ namespace TRRandomizerCore.Editors
             config[nameof(UseSolidEnemyWireframing)] = UseSolidEnemyWireframing;
             config[nameof(UseDifferentWireframeColours)] = UseDifferentWireframeColours;
             config[nameof(UseWireframeLadders)] = UseWireframeLadders;
+            config[nameof(WireframeMode)] = WireframeMode;
 
             config[nameof(RandomizeOutfits)] = RandomizeOutfits;
             config[nameof(OutfitSeed)] = OutfitSeed;

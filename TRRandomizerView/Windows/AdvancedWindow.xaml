@@ -147,6 +147,7 @@
                         Visibility="{Binding HasItemDifficulty, Converter={StaticResource BoolToCollapsedConverter}}">
                 <StackPanel.Resources>
                     <cvt:ComparisonConverter x:Key="ComparisonConverter" />
+                    <cvt:InverseComparisonConverter x:Key="InverseComparisonConverter"/>
                 </StackPanel.Resources>
 
                 <TextBlock Style="{StaticResource HeaderStyle}"
@@ -1018,11 +1019,19 @@
             <StackPanel Grid.Row="15"
                         Visibility="{Binding HasTextureOptions, Converter={StaticResource BoolToCollapsedConverter}}">
 
+                <StackPanel.Resources>
+                    <cvt:ComparisonConverter x:Key="ComparisonConverter" />
+                    <cvt:InverseComparisonConverter x:Key="InverseComparisonConverter"/>
+                </StackPanel.Resources>
+                
                 <TextBlock Style="{StaticResource HeaderStyle}"
                            Text="Wireframing"/>
 
                 <Grid Margin="0,5,0,0">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -1037,7 +1046,8 @@
 
                     <Border Margin="0,3,0,0">
                         <StackPanel Orientation="Horizontal" 
-                                    HorizontalAlignment="Left">
+                                    HorizontalAlignment="Left"
+                                    Margin="0,3,0,0">
                             <Label Content="Number of levels"
                                    VerticalAlignment="Center"
                                    Padding="0,0,5,0" Margin="0"/>
@@ -1053,10 +1063,61 @@
 
                     <Border Grid.Column="1">
                         <Label Style="{StaticResource OptionDescriptionStyle}"
-                               Content="Strip back level geometry and model textures for a wireframe effect."/>
+                               Content="The specified number of levels will use wireframe rendering."/>
+                    </Border>
+                    
+                    <Border Grid.Row="1"
+                            Visibility="{Binding HasNativeWireframingOptions, Converter={StaticResource BoolToCollapsedConverter}}">
+                        <RadioButton Content="Simulated mode"
+                                     GroupName="wireframeMode"
+                                     x:Name="_simulatedWireframeButton"
+                                     VerticalAlignment="Center"
+                                     Padding="4,0,0,0"
+                                     IsChecked="{Binding ControllerProxy.WireframeMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Simulated}, Mode=TwoWay}"/>
                     </Border>
 
-                    <Border Grid.Row="1">
+                    <Border Grid.Row="1"
+                            Grid.Column="1"
+                            Visibility="{Binding HasNativeWireframingOptions, Converter={StaticResource BoolToCollapsedConverter}}">
+                        <Label Style="{StaticResource OptionDescriptionStyle}"
+                               Content="Generate TRRando wireframe-style textures."/>
+                    </Border>
+
+                    <Border Grid.Row="2"
+                            Visibility="{Binding HasNativeWireframingOptions, Converter={StaticResource BoolToCollapsedConverter}}">
+                        <RadioButton Content="Native mode"
+                                     GroupName="wireframeMode"
+                                     x:Name="_nativeWireframeMode"
+                                     VerticalAlignment="Center"
+                                     Padding="4,0,0,0"
+                                     IsChecked="{Binding ControllerProxy.WireframeMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Native}, Mode=TwoWay}"/>
+                    </Border>
+
+                    <Border Grid.Row="2"
+                            Grid.Column="1"
+                            Visibility="{Binding HasNativeWireframingOptions, Converter={StaticResource BoolToCollapsedConverter}}">
+                        <Label Style="{StaticResource OptionDescriptionStyle}"
+                               Content="Use the engine's built-in method of wireframing."/>
+                    </Border>
+
+                    <Border Grid.Row="3"
+                            Visibility="{Binding HasNativeWireframingOptions, Converter={StaticResource BoolToCollapsedConverter}}">
+                        <RadioButton Content="Combination mode"
+                                     GroupName="wireframeMode"
+                                     x:Name="_comboWireframeMode"
+                                     VerticalAlignment="Center"
+                                     Padding="4,0,0,0"
+                                     IsChecked="{Binding ControllerProxy.WireframeMode, Converter={StaticResource ComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Combination}, Mode=TwoWay}" />
+                    </Border>
+
+                    <Border Grid.Row="3"
+                            Grid.Column="1"
+                            Visibility="{Binding HasNativeWireframingOptions, Converter={StaticResource BoolToCollapsedConverter}}">
+                        <Label Style="{StaticResource OptionDescriptionStyle}"
+                               Content="Use a random combination of simulated and native modes."/>
+                    </Border>
+
+                    <Border Grid.Row="4">
                         <CheckBox IsChecked="{Binding ControllerProxy.AssaultCourseWireframe, Mode=TwoWay}"
                                   VerticalAlignment="Center">
                             <Label Padding="0"
@@ -1065,12 +1126,13 @@
                     </Border>
 
                     <Border Grid.Column="1"
-                            Grid.Row="1">
+                            Grid.Row="4">
                         <Label Style="{StaticResource OptionDescriptionStyle}"
                                Content="Wireframe the assault course level in addition to or separately from above."/>
                     </Border>
 
-                    <Border Grid.Row="2">
+                    <Border Grid.Row="5"
+                            IsEnabled="{Binding ControllerProxy.WireframeMode, Converter={StaticResource InverseComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Native}}">
                         <CheckBox IsChecked="{Binding ControllerProxy.UseSolidLaraWireframing, Mode=TwoWay}"
                                   VerticalAlignment="Center">
                             <Label Padding="0"
@@ -1079,12 +1141,14 @@
                     </Border>
 
                     <Border Grid.Column="1"
-                            Grid.Row="2">
+                            Grid.Row="5"
+                            IsEnabled="{Binding ControllerProxy.WireframeMode, Converter={StaticResource InverseComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Native}}">
                         <Label Style="{StaticResource OptionDescriptionStyle}"
                                Content="If selected, Lara will always be a solid colour and opaque, otherwise she may also have wireframing applied."/>
                     </Border>
 
-                    <Border Grid.Row="3">
+                    <Border Grid.Row="6"
+                            IsEnabled="{Binding ControllerProxy.WireframeMode, Converter={StaticResource InverseComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Native}}">
                         <CheckBox IsChecked="{Binding ControllerProxy.UseSolidEnemyWireframing, Mode=TwoWay}"
                                   VerticalAlignment="Center">
                             <Label Padding="0"
@@ -1093,12 +1157,14 @@
                     </Border>
 
                     <Border Grid.Column="1"
-                            Grid.Row="3">
+                            Grid.Row="6"
+                            IsEnabled="{Binding ControllerProxy.WireframeMode, Converter={StaticResource InverseComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Native}}">
                         <Label Style="{StaticResource OptionDescriptionStyle}"
                                Content="If selected, enemies will always be a solid colour and opaque, otherwise they will have wireframing applied."/>
                     </Border>
 
-                    <Border Grid.Row="4">
+                    <Border Grid.Row="7"
+                            IsEnabled="{Binding ControllerProxy.WireframeMode, Converter={StaticResource InverseComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Native}}">
                         <CheckBox IsChecked="{Binding ControllerProxy.UseDifferentWireframeColours, Mode=TwoWay}"
                                   VerticalAlignment="Center">
                             <Label Padding="0"
@@ -1107,13 +1173,15 @@
                     </Border>
 
                     <Border Grid.Column="1"
-                            Grid.Row="4">
+                            Grid.Row="7"
+                            IsEnabled="{Binding ControllerProxy.WireframeMode, Converter={StaticResource InverseComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Native}}">
                         <Label Style="{StaticResource OptionDescriptionStyle}"
                                Content="If selected, different models will use different colours when solid, otherwise they will use the same colour as Lara."/>
                     </Border>
 
-                    <Border Grid.Row="5"
-                            Visibility="{Binding ControllerProxy.IsLaddersTypeSupported, Converter={StaticResource BoolToCollapsedConverter}}">
+                    <Border Grid.Row="8"
+                            Visibility="{Binding ControllerProxy.IsLaddersTypeSupported, Converter={StaticResource BoolToCollapsedConverter}}"
+                            IsEnabled="{Binding ControllerProxy.WireframeMode, Converter={StaticResource InverseComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Native}}">
                         <CheckBox IsChecked="{Binding ControllerProxy.UseWireframeLadders, Mode=TwoWay}"
                                   VerticalAlignment="Center">
                             <Label Padding="0"
@@ -1122,8 +1190,9 @@
                     </Border>
                     
                     <Border Grid.Column="1"
-                            Grid.Row="5"
-                            Visibility="{Binding ControllerProxy.IsLaddersTypeSupported, Converter={StaticResource BoolToCollapsedConverter}}">
+                            Grid.Row="8"
+                            Visibility="{Binding ControllerProxy.IsLaddersTypeSupported, Converter={StaticResource BoolToCollapsedConverter}}"
+                            IsEnabled="{Binding ControllerProxy.WireframeMode, Converter={StaticResource InverseComparisonConverter}, ConverterParameter={x:Static helpers:WireframeMode.Native}}">
                         <Label Style="{StaticResource OptionDescriptionStyle}"
                                Content="If selected, special textures will be generated for ladders, otherwise they will look the same as walls."/>
                     </Border>

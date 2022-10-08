@@ -53,6 +53,7 @@ namespace TRRandomizerView.Model
         private bool _useSolidEnemyWireframing;
         private bool _useDifferentWireframeColours;
         private bool _useWireframeLadders;
+        private WireframeMode _wireframeMode;
         private bool _nightModeAssaultCourse;
         private bool _overrideSunsets;
         private Color _vfxFilterColor;
@@ -2077,6 +2078,16 @@ namespace TRRandomizerView.Model
             }
         }
 
+        public WireframeMode WireframeMode
+        {
+            get => _wireframeMode;
+            set
+            {
+                _wireframeMode = value;
+                FirePropertyChanged();
+            }
+        }
+
         public bool AutoLaunchGame
         {
             get => _autoLaunchGame;
@@ -2732,6 +2743,7 @@ namespace TRRandomizerView.Model
             UseSolidEnemyWireframing = _controller.UseSolidEnemyWireframing;
             UseDifferentWireframeColours = _controller.UseDifferentWireframeColours;
             UseWireframeLadders = _controller.UseWireframeLadders;
+            WireframeMode = _controller.WireframeMode;
 
             RandomizeOutfits = _controller.RandomizeOutfits;
             OutfitSeed = _controller.OutfitSeed;
@@ -3119,6 +3131,7 @@ namespace TRRandomizerView.Model
             _controller.UseSolidEnemyWireframing = UseSolidEnemyWireframing;
             _controller.UseDifferentWireframeColours = UseDifferentWireframeColours;
             _controller.UseWireframeLadders = UseWireframeLadders;
+            _controller.WireframeMode = WireframeMode;
 
             _controller.RandomizeOutfits = RandomizeOutfits;
             _controller.OutfitSeed = OutfitSeed;
@@ -3259,6 +3272,7 @@ namespace TRRandomizerView.Model
         public bool IsTextTypeSupported => IsRandomizationSupported(TRRandomizerType.Text);
         public bool IsEnvironmentTypeSupported => IsRandomizationSupported(TRRandomizerType.Environment);
         public bool IsLaddersTypeSupported => IsRandomizationSupported(TRRandomizerType.Ladders);
+        public bool IsNativeWireframingTypeSupported => IsRandomizationSupported(TRRandomizerType.NativeWireframing);
         public bool IsWeatherTypeSupported => IsRandomizationSupported(TRRandomizerType.Weather);
         public bool IsBirdMonsterBehaviourTypeSupported => IsRandomizationSupported(TRRandomizerType.BirdMonsterBehaviour);
         public bool IsDragonSpawnTypeSupported => IsRandomizationSupported(TRRandomizerType.DragonSpawn);

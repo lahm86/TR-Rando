@@ -105,6 +105,7 @@ namespace TRRandomizerCore
 
         private static readonly List<TRRandomizerType> _tr3MainTypes = new List<TRRandomizerType>
         {
+            TRRandomizerType.NativeWireframing,
             TRRandomizerType.SecretCount,
             TRRandomizerType.Weather
         };

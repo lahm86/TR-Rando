@@ -78,6 +78,11 @@ namespace TRRandomizerView.Windows
             nameof(HasTextureOptions), typeof(bool), typeof(AdvancedWindow)
         );
 
+        public static readonly DependencyProperty HasNativeWireframingOptionsProperty = DependencyProperty.Register
+        (
+            nameof(HasNativeWireframingOptions), typeof(bool), typeof(AdvancedWindow)
+        );
+
         public static readonly DependencyProperty HasAudioOptionsProperty = DependencyProperty.Register
         (
             nameof(HasAudioOptions), typeof(bool), typeof(AdvancedWindow)
@@ -183,6 +188,12 @@ namespace TRRandomizerView.Windows
         {
             get => (bool)GetValue(HasTextureOptionsProperty);
             set => SetValue(HasTextureOptionsProperty, value);
+        }
+
+        public bool HasNativeWireframingOptions
+        {
+            get => (bool)GetValue(HasNativeWireframingOptionsProperty);
+            set => SetValue(HasNativeWireframingOptionsProperty, value);
         }
 
         public bool HasAudioOptions
@@ -318,6 +329,21 @@ namespace TRRandomizerView.Windows
                         break;
                     case TRSecretCountMode.Customized:
                         _customizedSecretCountButton.IsChecked = true;
+                        break;
+                }
+            }
+            if (HasNativeWireframingOptions)
+            {
+                switch (ControllerProxy.WireframeMode)
+                {
+                    case WireframeMode.Simulated:
+                        _simulatedWireframeButton.IsChecked = true;
+                        break;
+                    case WireframeMode.Native:
+                        _nativeWireframeMode.IsChecked = true;
+                        break;
+                    case WireframeMode.Combination:
+                        _comboWireframeMode.IsChecked = true;
                         break;
                 }
             }

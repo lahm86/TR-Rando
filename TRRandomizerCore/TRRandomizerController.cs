@@ -1227,6 +1227,12 @@ namespace TRRandomizerCore
             set => LevelRandomizer.UseWireframeLadders = value;
         }
 
+        public WireframeMode WireframeMode
+        {
+            get => LevelRandomizer.WireframeMode;
+            set => LevelRandomizer.WireframeMode = value;
+        }
+
         public bool HardSecrets
         {
             get => LevelRandomizer.HardSecrets;
