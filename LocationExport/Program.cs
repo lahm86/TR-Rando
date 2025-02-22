@@ -12,27 +12,196 @@ class Program
     private const int _uwCornerWallGap = TRConsts.Step4 / 7;
     private const int _uwCornerFloorGap = TRConsts.Step1 / 16;
 
-    private static TR1LevelControl _reader1;
-    private static TR2LevelControl _reader2;
-    private static TR3LevelControl _reader3;
-    private static Dictionary<string, List<Location>> _allTR1Exclusions;
-    private static Dictionary<string, List<Location>> _allTR2Exclusions;
-    private static Dictionary<string, List<Location>> _allTR3Exclusions;
+    private readonly static TR1LevelControl _reader1 = new();
+    private readonly static TR2LevelControl _reader2 = new();
+    private readonly static TR3LevelControl _reader3 = new();
+    private readonly static TR4LevelControl _reader4 = new();
+    private readonly static TR5LevelControl _reader5 = new();
+    private readonly static Dictionary<string, List<Location>> _allTR1Exclusions = GetExclusions(TRGameVersion.TR1);
+    private readonly static Dictionary<string, List<Location>> _allTR2Exclusions = GetExclusions(TRGameVersion.TR2);
+    private readonly static Dictionary<string, List<Location>> _allTR3Exclusions = GetExclusions(TRGameVersion.TR3);
+
+    static Dictionary<string, List<Location>> GetExclusions(TRGameVersion version)
+        => JsonConvert.DeserializeObject<Dictionary<string, List<Location>>>(File.ReadAllText($"Resources/{version}/Locations/invalid_item_locations.json"));
 
     static void Main(string[] args)
     {
         if (args.Length == 0 || args[0].Contains('?'))
         {
+            string tr4CleanPath = "path/to/data";
+            string tr5CleanPath = "path/to/data";
+
+            {
+                Dictionary<string, List<Location>> routes = JsonConvert.DeserializeObject<Dictionary<string, List<Location>>>(File.ReadAllText("Resources/TR4/Locations/routes.json"));
+                foreach (string lvl in TR4LevelNames.AsList)
+                {
+                    string path = Path.Combine(tr4CleanPath, lvl);
+                    TR4Level level = _reader4.Read(path);
+                    List<Location> locs = ExportTR4Locations(path);
+
+                    IEnumerable<Location> orderedLocations = routes[lvl]
+                        .Select(r => r.Room)
+                        .Distinct()
+                        .Where(r => r < level.Rooms.Count && !level.Rooms[r].ContainsWater)
+                        .SelectMany(r => locs.Where(l => l.Room == r));
+
+                    Queue<Location> queue = new(orderedLocations);
+                    bool moveLara = true;
+                    foreach (TR4Entity e in level.Entities.Where(e => TR4TypeUtilities.IsAnyPickupType(e.TypeID)))
+                    {
+                        Location loc = queue.Dequeue();
+                        e.SetLocation(loc);
+                        e.X++; // In case there is an enemy here
+                        e.Invisible = false;
+                        e.OCB = 0;
+                        if (moveLara)
+                        {
+                            level.Entities.Find(e => e.TypeID == TR4Type.Lara).SetLocation(loc);
+                            moveLara = false;
+                        }
+                    }
+
+                    // Fast secrets
+                    List<FDTriggerEntry> secretTriggers = level.FloorData.GetTriggers(FDTrigAction.SecretFound);
+                    List<short> secrets = secretTriggers
+                        .Select(t => t.Actions.Find(a => a.Action == FDTrigAction.SecretFound).Parameter)
+                        .Distinct()
+                        .ToList();
+
+
+                    // Clear all triggers
+                    foreach (TRRoomSector sector in level.Rooms.SelectMany(r => r.Sectors))
+                    {
+                        if (sector.FDIndex != 0)
+                        {
+                            List<FDEntry> entries = level.FloorData[sector.FDIndex];
+                            entries.RemoveAll(e => e is FDTriggerEntry);
+                        }
+                    }
+
+                    // Open all doors
+                    level.Entities.FindAll(e => TR4TypeUtilities.IsDoorType(e.TypeID))
+                        .ForEach(e => e.Flags = 0x3E00);
+
+                    queue = new(orderedLocations);
+                    foreach (short secretIndex in secrets)
+                    {
+                        Location loc = queue.Dequeue();
+                        TRRoomSector sector = level.GetRoomSector(loc);
+                        if (sector.FDIndex == 0)
+                            level.FloorData.CreateFloorData(sector);
+
+                        level.FloorData[sector.FDIndex].Add(new FDTriggerEntry
+                        {
+                            Actions = new()
+                            {
+                                new() { Action = FDTrigAction.SecretFound, Parameter = secretIndex, },
+                            }
+                        });
+                    }
+
+                    Directory.CreateDirectory("TR4");
+                    _reader4.Write(level, Path.Combine("TR4", lvl));
+
+                    TR4PDPControl c = new();
+                    var pdpName = $"{Path.GetFileNameWithoutExtension(lvl)}.PDP";
+                    var pdp = c.Read(Path.Combine(tr4CleanPath, pdpName));
+                    // Swandive to end level
+                    pdp[default].Animations[158].Commands.Add(new TRFXCommand()
+                    {
+                        FrameNumber = 1,
+                        EffectID = (short)TR4FX.EndLevel,
+                    });
+                    c.Write(pdp, Path.Combine("TR4", pdpName));
+                }
+            }
+
+            {
+                Dictionary<string, List<Location>> routes = JsonConvert.DeserializeObject<Dictionary<string, List<Location>>>(File.ReadAllText("Resources/TR5/Locations/routes.json"));
+                foreach (string lvl in TR5LevelNames.AsList)
+                {
+                    string path = Path.Combine(tr5CleanPath, lvl);
+                    TR5Level level = _reader5.Read(path);
+                    List<Location> locs = ExportTR5Locations(path);
+
+                    IEnumerable<Location> orderedLocations = routes[lvl]
+                        .Select(r => r.Room)
+                        .Distinct()
+                        .Where(r => r < level.Rooms.Count && (lvl == TR5LevelNames.DEEPSEA || !level.Rooms[r].ContainsWater))
+                        .SelectMany(r => locs.Where(l => l.Room == r));
+
+                    Queue<Location> queue = new(orderedLocations);
+                    bool moveLara = true;
+                    List<TR5Entity> things = new(level.Entities.Where(e => TR5TypeUtilities.IsAnyPickupType(e.TypeID)));
+                    foreach (TR5Entity e in level.Entities.Where(e => TR5TypeUtilities.IsAnyPickupType(e.TypeID)))
+                    {
+                        Location loc = queue.Dequeue();
+                        e.SetLocation(loc);
+                        e.X++; // In case there is an enemy here
+                        e.Invisible = false;
+                        e.OCB = 0;
+                        if (moveLara)
+                        {
+                            level.Entities.Find(e => e.TypeID == TR5Type.Lara).SetLocation(loc);
+                            moveLara = false;
+                        }
+                    }
+
+                    // Clear all triggers
+                    foreach (TRRoomSector sector in level.Rooms.SelectMany(r => r.Sectors))
+                    {
+                        if (sector.FDIndex != 0)
+                        {
+                            List<FDEntry> entries = level.FloorData[sector.FDIndex];
+                            entries.RemoveAll(e => e is FDTriggerEntry);
+                        }
+                    }
+
+                    if (lvl == TR5LevelNames.DEEPSEA)
+                    {
+                        // This level is weird. Moving the secret breaks it, and triggering level end on pickup doesn't work.
+                        // Instead just pick it up and swim forward a couple of tiles.
+                        int secret = level.Entities.FindIndex(e => e.TypeID == TR5Type.PickupItem4);
+                        Location loc = level.Entities[secret].GetLocation();
+                        loc.Z += 2048;
+                        TRRoomSector sector = level.GetRoomSector(loc);
+                        if (sector.FDIndex == 0)
+                        {
+                            level.FloorData.CreateFloorData(sector);
+                        }
+                        level.FloorData[sector.FDIndex].Add(new FDTriggerEntry
+                        {
+                            Mask = 31,
+                            Actions = new()
+                            {
+                                new() { Action = FDTrigAction.EndLevel }
+                            }
+                        });
+                    }
+
+                    // Open all doors
+                    level.Entities.FindAll(e => TR5TypeUtilities.IsDoorType(e.TypeID))
+                        .ForEach(e => e.Flags = 0x3E00);
+
+                    Directory.CreateDirectory("TR5");
+                    _reader5.Write(level, Path.Combine("TR5", lvl));
+
+                    TR5PDPControl c = new();
+                    var pdpName = $"{Path.GetFileNameWithoutExtension(lvl)}.PDP";
+                    var pdp = c.Read(Path.Combine(tr5CleanPath, pdpName));
+                    // Swandive to end level
+                    pdp[default].Animations[158].Commands.Add(new TRFXCommand()
+                    {
+                        FrameNumber = 1,
+                        EffectID = (short)TR4FX.EndLevel,
+                    });
+                    c.Write(pdp, Path.Combine("TR5", pdpName));
+                }
+            }
+
             Usage();
             return;
         }
-
-        _reader1 = new();
-        _reader2 = new();
-        _reader3 = new();
-        _allTR1Exclusions = JsonConvert.DeserializeObject<Dictionary<string, List<Location>>>(File.ReadAllText("Resources/TR1/Locations/invalid_item_locations.json"));
-        _allTR2Exclusions = JsonConvert.DeserializeObject<Dictionary<string, List<Location>>>(File.ReadAllText("Resources/TR2/Locations/invalid_item_locations.json"));
-        _allTR3Exclusions = JsonConvert.DeserializeObject<Dictionary<string, List<Location>>>(File.ReadAllText("Resources/TR3/Locations/invalid_item_locations.json"));
 
         if (args[0].ToLower() == "export")
         {
@@ -177,6 +346,7 @@ class Program
     private static List<Location> ExportTR1Locations(string lvl)
     {
         TR1Level level = _reader1.Read(lvl);
+        lvl = Path.GetFileName(lvl);
         List<Location> exclusions = new();
         if (_allTR1Exclusions.ContainsKey(lvl))
         {
@@ -198,6 +368,7 @@ class Program
     private static List<Location> ExportTR2Locations(string lvl)
     {
         TR2Level level = _reader2.Read(lvl);
+        lvl = Path.GetFileName(lvl);
         List<Location> exclusions = new();
         if (_allTR2Exclusions.ContainsKey(lvl))
         {
@@ -219,6 +390,7 @@ class Program
     private static List<Location> ExportTR3Locations(string lvl)
     {
         TR3Level level = _reader3.Read(lvl);
+        lvl = Path.GetFileName(lvl);
         List<Location> exclusions = new();
         if (_allTR3Exclusions.ContainsKey(lvl))
         {
@@ -234,6 +406,22 @@ class Program
         }
 
         TR3LocationGenerator generator = new();
+        return generator.Generate(level, exclusions);
+    }
+
+    private static List<Location> ExportTR4Locations(string lvl)
+    {
+        TR4Level level = _reader4.Read(lvl);
+        List<Location> exclusions = new(); // TODO
+        TR4LocationGenerator generator = new();
+        return generator.Generate(level, exclusions);
+    }
+
+    private static List<Location> ExportTR5Locations(string lvl)
+    {
+        TR5Level level = _reader5.Read(lvl);
+        List<Location> exclusions = new(); // TODO
+        TR5LocationGenerator generator = new();
         return generator.Generate(level, exclusions);
     }
 
