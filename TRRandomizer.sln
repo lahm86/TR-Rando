@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TRDataControlTests", "TRDat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TRRandomizerCoreTests", "TRRandomizerCoreTests\TRRandomizerCoreTests.csproj", "{DE326EEC-57C6-43C4-986E-80F2498A3270}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cheats", "Cheats\Cheats.csproj", "{272F6E0F-45C7-47ED-BB79-433C214DB7A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +97,10 @@ Global
 		{DE326EEC-57C6-43C4-986E-80F2498A3270}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE326EEC-57C6-43C4-986E-80F2498A3270}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE326EEC-57C6-43C4-986E-80F2498A3270}.Release|Any CPU.Build.0 = Release|Any CPU
+		{272F6E0F-45C7-47ED-BB79-433C214DB7A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{272F6E0F-45C7-47ED-BB79-433C214DB7A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{272F6E0F-45C7-47ED-BB79-433C214DB7A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{272F6E0F-45C7-47ED-BB79-433C214DB7A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -105,6 +111,7 @@ Global
 		{62336986-BC9F-447E-A046-E24E8153C5AF} = {5F1A11E5-F541-4E3B-B331-93574EE4C629}
 		{D69A8033-C014-421E-9DFA-29D5B8A547B2} = {5F1A11E5-F541-4E3B-B331-93574EE4C629}
 		{4B75F7F5-A3D4-465F-A8B8-F5142057FD97} = {5F1A11E5-F541-4E3B-B331-93574EE4C629}
+		{272F6E0F-45C7-47ED-BB79-433C214DB7A0} = {5F1A11E5-F541-4E3B-B331-93574EE4C629}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B68A2054-7393-4B0D-9004-0E92FB8324FC}
