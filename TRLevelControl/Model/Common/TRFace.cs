@@ -13,6 +13,19 @@ public class TRFace : ICloneable
         (Vertices[pos2], Vertices[pos1]) = (Vertices[pos1], Vertices[pos2]);
     }
 
+    public void Rotate(int rots)
+    {
+        for (int i = 0; i < rots; i++)
+        {
+            ushort first = Vertices[0];
+            for (int j = 0; j < Vertices.Count - 1; j++)
+            {
+                Vertices[j] = Vertices[j + 1];
+            }
+            Vertices[^1] = first;
+        }
+    }
+
     public TRFace Clone()
     {
         return new()
