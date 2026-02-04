@@ -1694,7 +1694,25 @@ class Program
                 Texture = mesh.TexturedRectangles[9].Texture,
             });
 
-            baseModel.MeshTrees.Add(new() { OffsetX = -1020, Flags = _read });
+            baseModel.MeshTrees.Add(new() { OffsetX = -1020, Flags = _pop });
+        }
+
+        if (false)
+        {
+            // Glasses
+            var caves = _reader2.Read("glasses.tr2");
+            var source = caves.Models[TR2Type.LaraSnowmobAnim_H];
+            source.Meshes = [source.Meshes[14]];
+            source.MeshTrees.Clear();
+            Import(baseLevel, baseModel, caves, source, null);
+
+            var head = baseModel.Meshes[^1];
+            head.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v < 61));
+            head.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v < 61));
+
+            CleanupVertices(head);
+
+            baseModel.MeshTrees.Add(new() { OffsetX = -1160, Flags = _pop });
         }
 
         /// Fixes
@@ -4181,6 +4199,43 @@ class Program
         return (ushort)(level.ObjectTextures.Count - 1);
     }
 
+    static void SplitModels(TR2Level level)
+    {
+        var models = new TRDictionary<TR2Type, TRModel>();
+        var type = 302;
+
+        var walkAnim = _reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2").Models[TR2Type.Lara].Animations[1];
+        walkAnim.Commands.Clear();
+        walkAnim.Changes.Clear();
+        walkAnim.NextAnimation = 0;
+        walkAnim.StateID = 0;
+        walkAnim.FrameRate = 1;
+        walkAnim.FrameEnd = 1;
+        walkAnim.Speed = new();
+        walkAnim.Frames = [walkAnim.Frames[0]];
+
+        foreach (var oldType in new[] { _laraSkin1, _laraSkin2 })
+        {
+            int max = oldType == _laraSkin1 ? 16 : 4;
+            var bigModel = level.Models[oldType];
+            for (int i = 0; i < max; i++)
+            {   
+                var off = i * 15 + 1;
+                var newModel = MakeBaseModel();
+                newModel.Meshes.Clear();
+                newModel.Meshes.AddRange(bigModel.Meshes.GetRange(off, 15));
+                newModel.MeshTrees.AddRange(bigModel.MeshTrees.GetRange(off, 14));
+                models[(TR2Type)type++] = newModel;
+                newModel.Animations[0] = walkAnim.Clone();
+            }
+        }
+
+        foreach (var oldType in new[] { _laraSkinExtra, _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3, _laraSkinLegs })
+            models[(TR2Type)type++] = level.Models[oldType];
+
+        level.Models = models;
+    }
+
     static void Main(string[] args)
     {
         if (true)
@@ -4719,6 +4774,7 @@ class Program
             SortGuns(baseLevel);
             DoLegs(baseLevel);
             //DoHolsters(baseLevel);
+            SplitModels(baseLevel);
 
             Repack(baseLevel);
             _reader2.Write(baseLevel, "outfits.tr2");
