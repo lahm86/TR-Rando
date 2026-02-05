@@ -18,9 +18,9 @@ class Program
         Png, Html, Segments, Faces, Boxes, Dependencies, Dds, TexInfo,
     }
 
-    static readonly TR1LevelControl _reader1 = new();
-    static readonly TR2LevelControl _reader2 = new();
-    static readonly TR3LevelControl _reader3 = new();
+    public static readonly TR1LevelControl _reader1 = new();
+    public static readonly TR2LevelControl _reader2 = new();
+    public static readonly TR3LevelControl _reader3 = new();
 
     public static void ConvertFlatFaces(TR1Level level, IEnumerable<TRModel> models)
     {
@@ -190,7 +190,7 @@ class Program
             });
     }
 
-    static TRModel MakeBaseModel()
+    public static TRModel MakeBaseModel()
     {
         var model = new TRModel();
         model.Meshes.Add(new() { Normals = [] });
@@ -210,7 +210,7 @@ class Program
         return model;
     }
 
-    static void Import(TR2Level targetLevel, TRModel targetModel, TR1Level sourceLevel, TRModel sourceModel, TRMesh head)
+    public static void Import(TR2Level targetLevel, TRModel targetModel, TR1Level sourceLevel, TRModel sourceModel, TRMesh head)
     {
         ConvertFlatFaces(sourceLevel, [sourceModel]);
 
@@ -241,7 +241,35 @@ class Program
         }
     }
 
-    static void Import(TR2Level targetLevel, TRModel targetModel, TR2Level sourceLevel, TRModel sourceModel, TRMesh head)
+    public static void ImportSprite(TR2Level targetLevel, TR1Level sourceLevel, TR1Type type, TR2Type targetType)
+    {
+        var packer = new TR1TexturePacker(sourceLevel);
+        var seq = sourceLevel.Sprites[type];
+        var regions = packer.GetSpriteRegions(seq)
+            .SelectMany(v => v.Value);
+
+        var packer2 = new TR2TexturePacker(targetLevel, 1024);
+        packer2.AddRectangles(regions);
+        packer2.Pack(true);
+
+        targetLevel.Sprites[targetType] = seq;
+    }
+
+    public static void ImportSprite(TR2Level targetLevel, TR2Level sourceLevel, TR2Type type, TR2Type targetType)
+    {
+        var packer = new TR2TexturePacker(sourceLevel);
+        var seq = sourceLevel.Sprites[type];
+        var regions = packer.GetSpriteRegions(seq)
+            .SelectMany(v => v.Value);
+
+        packer = new(targetLevel, 1024);
+        packer.AddRectangles(regions);
+        packer.Pack(true);
+
+        targetLevel.Sprites[targetType] = seq;
+    }
+
+    public static void Import(TR2Level targetLevel, TRModel targetModel, TR2Level sourceLevel, TRModel sourceModel, TRMesh head)
     {
         ConvertFlatFaces(sourceLevel, [sourceModel]);
 
@@ -272,7 +300,7 @@ class Program
         }
     }
 
-    static void Import(TR2Level targetLevel, TRModel targetModel, TR3Level sourceLevel, TRModel sourceModel, TRMesh head)
+    public static void Import(TR2Level targetLevel, TRModel targetModel, TR3Level sourceLevel, TRModel sourceModel, TRMesh head)
     {
         ConvertFlatFaces(sourceLevel, [sourceModel]);
 
@@ -303,7 +331,7 @@ class Program
         }
     }
 
-    static TR2Level MakeBaseLevel()
+    public static TR2Level MakeBaseLevel()
     {
         var baseLevel = _reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
         baseLevel.AnimatedTextures.Clear();
@@ -324,12 +352,16 @@ class Program
         return baseLevel;
     }
 
-    static void Repack(TR2Level level)
+    public static void Repack(TR2Level level)
     {
         var packer = new TR2TexturePacker(level);
         var regions = packer.GetMeshRegions(level.DistinctMeshes);
         new TRImageDeduplicator().Deduplicate(regions);
-        var rects = regions.SelectMany(v => v.Value);
+        var rects = regions.SelectMany(v => v.Value).ToList();
+        foreach (var sprite in level.Sprites.Values)
+        {
+            rects.AddRange(packer.GetSpriteRegions(sprite).SelectMany(v => v.Value));
+        }
 
         level.Images16 = [new() { Pixels = new ushort[256 * 256] }];
         level.Images8 = [new() { Pixels = new byte[256 * 256] }];
@@ -337,18 +369,26 @@ class Program
         var originalInfos = level.ObjectTextures.ToList();
         level.ObjectTextures.Clear();
 
+        var sprites = new TRDictionary<TR2Type, TRSpriteSequence>();
+        foreach (var (type, seq) in level.Sprites)
+            sprites[type] = seq;
+        level.Sprites.Clear();
+
         packer = new(level, 1024);
         packer.Options.OrderMode = PackingOrderMode.Area;
         packer.AddRectangles(rects);
         packer.Pack(true);
 
         level.ObjectTextures.AddRange(rects.SelectMany(r => r.Segments.Select(s => s.Texture as TRObjectTexture)));
+        level.ObjectTextures.RemoveAll(o => o is null);
         level.DistinctMeshes.SelectMany(m => m.TexturedFaces)
             .ToList()
             .ForEach(f =>
             {
                 f.Texture = (ushort)level.ObjectTextures.IndexOf(originalInfos[f.Texture]);
             });
+
+        level.Sprites = sprites;
 
         // Final texinfo dedupe
         static object TexInfoKey(TRObjectTexture t) => new
@@ -2912,7 +2952,7 @@ class Program
         }
     }
 
-    static void CleanupVertices(TRMesh mesh)
+    public static void CleanupVertices(TRMesh mesh)
     {
         var newVerts = mesh.TexturedFaces.SelectMany(f => f.Vertices.Select(v => mesh.Vertices[v]))
             .Distinct().ToList();
@@ -4238,6 +4278,13 @@ class Program
 
     static void Main(string[] args)
     {
+        if (true)
+        {
+            GunExtras.MakeTR1Guns();
+            GunExtras.MakeTR1GymGuns();
+            return;
+        }
+
         if (true)
         {
             var baseLevel = MakeBaseLevel();

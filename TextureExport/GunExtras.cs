@@ -1,4 +1,7 @@
-﻿using TRLevelControl.Model;
+﻿using TRDataControl;
+using TRImageControl;
+using TRImageControl.Packing;
+using TRLevelControl.Model;
 
 namespace TextureExport;
 
@@ -101,5 +104,327 @@ public static class GunExtras
             var face = baseMesh.TexturedRectangles.Find(f => f.Vertices.All(v => v >= 12));
             targets.ToList().ForEach(f => f.Texture = face.Texture);
         }
+    }
+
+    static Dictionary<TR2Type, int> _map2 = new()
+    {
+        [TR2Type.LaraShotgunAnim_H] = 2,
+        [TR2Type.Flares_M_H] = 188,
+        [TR2Type.LaraFlareAnim_H] = 192,
+        [TR2Type.Flare_H] = 193,
+        [TR2Type.FlareSparks_S_H] = 194,
+        [TR2Type.LaraM16Anim_H] = 201,
+        [TR2Type.LaraGrenadeAnim_H] = 202,
+        [TR2Type.LaraHarpoonAnim_H] = 203,
+        [TR2Type.M16_M_H] = 204,
+        [TR2Type.GrenadeLauncher_M_H] = 205,
+        [TR2Type.Harpoon_M_H] = 206,
+        [TR2Type.M16Ammo_M_H] = 207,
+        [TR2Type.Grenades_M_H] = 208,
+        [TR2Type.HarpoonAmmo_M_H] = 209,
+        [TR2Type.M16Gunflare_H] = 210,
+        [TR2Type.GrenadeProjectile_H] = 211,
+        [TR2Type.HarpoonProjectile_H] = 212,
+        [TR2Type.LaraAutoAnim_H] = 213,
+        [TR2Type.Autos_M_H] = 214,
+        [TR2Type.AutoAmmo_M_H] = 215,
+        [TR2Type.Flares_S_P] = 187,
+        [TR2Type.M16_S_P] = 241,
+        [TR2Type.GrenadeLauncher_S_P] = 242,
+        [TR2Type.Harpoon_S_P] = 243,
+        [TR2Type.M16Ammo_S_P] = 244,
+        [TR2Type.Grenades_S_P] = 245,
+        [TR2Type.HarpoonAmmo_S_P] = 246,
+        [TR2Type.Automags_S_P] = 248,
+        [TR2Type.AutoAmmo_S_P] = 249,
+    };
+    static Dictionary<TR3Type, int> _map3 = new()
+    {
+        [TR3Type.LaraDeagleAnimation_H] = 216,
+        [TR3Type.Deagle_M_H] = 217,
+        [TR3Type.DeagleAmmo_M_H] = 218,
+        [TR3Type.LaraMP5Animation_H] = 219,
+        [TR3Type.MP5_M_H] = 220,
+        [TR3Type.MP5Ammo_M_H] = 221,
+        [TR3Type.LaraRocketAnimation_H] = 222,
+        [TR3Type.RocketLauncher_M_H] = 223,
+        [TR3Type.Rockets_M_H] = 224,
+        [TR3Type.RocketSingle] = 225,
+        [TR3Type.Deagle_P] = 251,
+        [TR3Type.DeagleAmmo_P] = 252,
+        [TR3Type.MP5_P] = 253,
+        [TR3Type.MP5Ammo_P] = 254,
+        [TR3Type.RocketLauncher_P] = 255,
+        [TR3Type.Rockets_P] = 256,
+    };
+
+    public static TR2Level BaseTR1Guns()
+    {
+        var level = Program.MakeBaseLevel();
+
+
+        TRMesh hips;
+        {
+            var model = Program.MakeBaseModel();
+            var caves = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            var shotgunAnim = caves.Models[TR1Type.LaraShotgunAnim_H];
+            caves.Palette[255] = new();
+            hips = shotgunAnim.Meshes[0];
+            hips.ColouredRectangles.AddRange(hips.TexturedRectangles);
+            hips.ColouredTriangles.AddRange(hips.TexturedTriangles);
+            hips.TexturedTriangles.Clear();
+            hips.TexturedRectangles.Clear();
+            hips.ColouredFaces.ToList().ForEach(f => f.Texture = 255);
+
+            var gun = shotgunAnim.Meshes[7];
+            shotgunAnim.Meshes = [hips, gun];
+
+            Program.Import(level, model, caves, shotgunAnim, null);
+
+            model.Meshes.RemoveAt(0);
+            for (int i = 0; i < 13; i++)
+                model.Meshes.Insert(0, model.Meshes[0]);
+
+            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            model.Animations = wall.Models[TR2Type.LaraShotgunAnim_H].Animations;
+            // Fix using holster SFX on draw
+            (model.Animations[1].Commands[0] as TRSFXCommand).SoundID = (short)TR1SFX.LaraDraw;
+            model.MeshTrees = shotgunAnim.MeshTrees;
+
+            gun = model.Meshes[14];
+            gun.Vertices.ForEach(v =>
+            {
+                v.Y += 204;
+                v.Z += 25;
+            });
+            gun.Centre = new() { X = 42, Y = 99, Z = 70 };
+            gun.CollRadius = 105;
+
+            gun.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v < 30));
+            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v < 30));
+            gun.Vertices.RemoveRange(0, 30);
+            gun.Normals.RemoveRange(0, 30);
+            gun.TexturedFaces.ToList().ForEach(f =>
+            {
+                for (int i = 0; i < f.Vertices.Count; i++)
+                {
+                    f.Vertices[i] -= 30;
+                }
+            });
+
+            level.Models[(TR2Type)_map2[TR2Type.LaraShotgunAnim_H]] = model;
+            hips = model.Meshes[0];
+            model.Meshes[10] = model.Meshes[10].Clone();
+            model.Meshes[13] = model.Meshes[13].Clone();
+        }
+
+        {
+            var model = Program.MakeBaseModel();
+            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var flares = wall.Models[TR2Type.LaraFlareAnim_H];
+            flares.Meshes = [flares.Meshes[13]];
+            Program.Import(level, model, wall, flares, null);
+
+            model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips.Clone())];
+            model.Animations = flares.Animations;
+            model.MeshTrees = flares.MeshTrees;
+
+            level.Models[(TR2Type)_map2[TR2Type.LaraFlareAnim_H]] = model;
+            
+        }
+
+        foreach (var type in new[] {
+            TR2Type.LaraAutoAnim_H, TR2Type.LaraM16Anim_H, TR2Type.LaraHarpoonAnim_H, TR2Type.LaraGrenadeAnim_H,
+        })
+        {
+            var model = Program.MakeBaseModel();
+            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var flares = wall.Models[type];
+            flares.Meshes = [flares.Meshes[14]];
+            Program.Import(level, model, wall, flares, null);
+
+            model.Meshes.RemoveAt(0);
+            var gun = model.Meshes[0];
+            model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
+            if (type != TR2Type.LaraAutoAnim_H)
+                model.Meshes[14] = gun;
+            model.Animations = flares.Animations;
+            model.MeshTrees = flares.MeshTrees;
+
+            level.Models[(TR2Type)_map2[type]] = model;
+
+            model.Meshes[10] = model.Meshes[10].Clone();
+            if (type == TR2Type.LaraAutoAnim_H)
+            {
+                model.Meshes[1] = model.Meshes[1].Clone();
+                model.Meshes[4] = model.Meshes[4].Clone();
+                model.Meshes[13] = model.Meshes[13].Clone();
+            }
+        }
+
+        foreach (var type in new[] {
+            TR2Type.Flare_H, TR2Type.FlareSparks_S_H, TR2Type.Flares_M_H,
+            TR2Type.M16_M_H, TR2Type.M16Ammo_M_H, TR2Type.M16Gunflare_H,
+            TR2Type.GrenadeLauncher_M_H, TR2Type.GrenadeProjectile_H, TR2Type.Grenades_M_H,
+            TR2Type.Harpoon_M_H, TR2Type.HarpoonAmmo_M_H, TR2Type.HarpoonProjectile_H,
+            TR2Type.AutoAmmo_M_H, TR2Type.Autos_M_H,
+        })
+        {
+            var model = Program.MakeBaseModel();
+            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var flares = wall.Models[type];
+            Program.Import(level, model, wall, flares, null);
+
+            model.Meshes.RemoveAt(0);
+            model.Animations = flares.Animations;
+            model.MeshTrees = flares.MeshTrees;
+
+            level.Models[(TR2Type)_map2[type]] = model;
+        }
+
+        foreach (var type in new[] {
+            TR2Type.Flares_S_P,
+            TR2Type.M16_S_P,
+            TR2Type.GrenadeLauncher_S_P,
+            TR2Type.Harpoon_S_P,
+            TR2Type.M16Ammo_S_P,
+            TR2Type.Grenades_S_P,
+            TR2Type.HarpoonAmmo_S_P,
+            TR2Type.Automags_S_P,
+            TR2Type.AutoAmmo_S_P
+        })
+        {
+            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            Program.ImportSprite(level, wall, type, (TR2Type)_map2[type]);
+        }
+
+        foreach (var type in new[] {
+            TR3Type.LaraDeagleAnimation_H, TR3Type.LaraMP5Animation_H, TR3Type.LaraRocketAnimation_H,
+        })
+        {
+            var model = Program.MakeBaseModel();
+            var wall = Program._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
+            var flares = wall.Models[type];
+            flares.Meshes = [flares.Meshes[14]];
+            Program.Import(level, model, wall, flares, null);
+
+            model.Meshes.RemoveAt(0);
+            var gun = model.Meshes[0];
+            model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
+            if (type != TR3Type.LaraDeagleAnimation_H)
+                model.Meshes[14] = gun;
+            model.Animations = flares.Animations;
+            model.MeshTrees = flares.MeshTrees;
+
+            level.Models[(TR2Type)_map3[type]] = model;
+
+            model.Meshes[10] = model.Meshes[10].Clone();
+            if (type == TR3Type.LaraDeagleAnimation_H)
+            {
+                model.Meshes[1] = model.Meshes[1].Clone();
+                model.Meshes[4] = model.Meshes[4].Clone();
+            }
+        }
+
+        foreach (var type in new[] {
+            TR3Type.Deagle_M_H, TR3Type.DeagleAmmo_M_H, TR3Type.MP5_M_H, TR3Type.MP5Ammo_M_H,
+            TR3Type.RocketLauncher_M_H, TR3Type.Rockets_M_H, TR3Type.RocketSingle,
+        })
+        {
+            var model = Program.MakeBaseModel();
+            var wall = Program._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
+            var flares = wall.Models[type];
+            Program.Import(level, model, wall, flares, null);
+
+            model.Meshes.RemoveAt(0);
+            model.Animations = flares.Animations;
+            model.MeshTrees = flares.MeshTrees;
+
+            level.Models[(TR2Type)_map3[type]] = model;
+        }
+
+        var map4 = new Dictionary<TR3Type, string>
+        {
+            [TR3Type.Deagle_P] = "DEAGLE_S_P",
+            [TR3Type.DeagleAmmo_P] = "DEAGLEAMMO_S_P",
+            [TR3Type.MP5_P] = "MP5_S_P",
+            [TR3Type.MP5Ammo_P] = "MP5AMMO_S_P",
+            [TR3Type.RocketLauncher_P] = "ROCKETLAUNCHER_S_P",
+            [TR3Type.Rockets_P] = "ROCKETAMMO_S_P",
+        };
+        foreach (var (type,name) in map4)
+        {
+            var blob = TRBlobControl.Read<TR1Blob>(name + ".TRB");
+            var tile = new TRImage();
+            tile.Import(blob.Textures.First().Image, new(0, 0));
+            level.Images16.Add(new() { Pixels = tile.ToRGB555() });
+            level.Images8.Add(new() { Pixels = tile.ToRGB(level.Palette) });
+            var tinfo = blob.Textures.First().Segments.First().Texture as TRSpriteTexture;
+            tinfo.Position = new(0, 0);
+            tinfo.Atlas = (ushort)(level.Images16.Count - 1);
+            level.Sprites[(TR2Type)_map3[type]] = new()
+            {
+                Textures = [tinfo],
+            };
+        }
+
+        return level;
+    }
+
+    public static void MakeTR1Guns()
+    {
+        var level = BaseTR1Guns();
+        Program.Repack(level);
+        Program._reader2.Write(level, "tr1guns.tr2");
+    }
+
+    public static void MakeTR1GymGuns()
+    {
+        var level = BaseTR1Guns();
+
+        var hips = level.Models[(TR2Type)_map2[TR2Type.LaraShotgunAnim_H]].Meshes[0];
+
+        foreach (var type in new[] { TR1Type.Lara, TR1Type.LaraPistolAnim_H, TR1Type.LaraMagnumAnim_H, TR1Type.LaraUziAnimation_H, TR1Type.Gunflare_H })
+        {
+            var model = Program.MakeBaseModel();
+            var wall = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            var flares = wall.Models[type];
+            if (type != TR1Type.Gunflare_H)
+                flares.Meshes = [flares.Meshes[14]];
+            Program.Import(level, model, wall, flares, null);
+
+            model.Meshes.RemoveAt(0);
+
+            if (type == TR1Type.Lara)
+            {
+                model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips.Clone())];
+                model.Meshes[0] = hips;
+            }
+            else if (type != TR1Type.Gunflare_H)
+            {
+                model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
+                model.Meshes[1] = model.Meshes[1].Clone();
+                model.Meshes[4] = model.Meshes[4].Clone();
+                model.Meshes[10] = model.Meshes[10].Clone();
+                model.Meshes[13] = model.Meshes[13].Clone();
+                if (type == TR1Type.LaraUziAnimation_H)
+                {
+                    model.Meshes[14] = model.Meshes[14].Clone();
+                }
+            }
+
+            model.Animations = flares.Animations;
+            model.MeshTrees = flares.MeshTrees;
+
+            level.Models[(TR2Type)(int)type] = model;
+        }
+
+        {
+            var wall = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            Program.ImportSprite(level, wall, TR1Type.Ricochet_S_H, (TR2Type)(int)TR1Type.Ricochet_S_H);
+        }
+
+        Program.Repack(level);
+        Program._reader2.Write(level, "tr1gymguns.tr2");
     }
 }
