@@ -4282,6 +4282,10 @@ class Program
         {
             GunExtras.MakeTR1Guns();
             GunExtras.MakeTR1GymGuns();
+            GunExtras.MakeTR2Guns();
+            GunExtras.MakeTR2GymGuns();
+            GunExtras.MakeTR2HSHGuns();
+            GunExtras.MakeTR2VegasGuns();
             return;
         }
 
