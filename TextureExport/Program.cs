@@ -2970,6 +2970,81 @@ class Program
         mesh.Normals = newNormals;
     }
 
+    static void DoBackGuns(TR2Level level)
+    {
+        {
+            var model = level.Models[_laraSkinGuns1];
+            {
+                var shifted = _reader2.Read("tr1shifted.tr2");
+                var shotty = shifted.Models[(TR2Type)(int)TR1Type.LaraShotgunAnim_H];
+                shotty.Meshes = [shotty.Meshes[14]];
+                Import(level, model, shifted, shotty, null);
+
+                model.MeshTrees.Add(new() { OffsetX = -1900, OffsetY = -200, OffsetZ = 38, Flags = _read });
+            }
+            int z = 128;
+            foreach (var type in new[] { 201, 219, 202, 203, 222 }) // M16, MP5, Grenade, Harpoon, Rocket
+            {
+                var shifted = _reader2.Read("tr1shifted.tr2");
+                var shotty = shifted.Models[(TR2Type)type];
+                shotty.Meshes = [shotty.Meshes[14]];
+                Import(level, model, shifted, shotty, null);
+
+                model.MeshTrees.Add(new() { OffsetZ = z, Flags = type == 201 ? _push : _read });
+                z += 128;
+            }
+            model.MeshTrees[^1].Flags = _pop;
+        }
+
+        {
+            var model = level.Models[_laraSkinGuns2];
+            {
+                var shifted = _reader2.Read("tr2shifted.tr2");
+                var shotty = shifted.Models[TR2Type.LaraShotgunAnim_H];
+                shotty.Meshes = [shotty.Meshes[14]];
+                Import(level, model, shifted, shotty, null);
+
+                model.MeshTrees.Add(new() { OffsetX = -1900, OffsetY = -200, OffsetZ = 38, Flags = _read });
+            }
+            int z = 128;
+            foreach (var type in new[] { 6, 290, 7, 8, 295 }) // M16, MP5, Grenade, Harpoon, Rocket
+            {
+                var shifted = _reader2.Read("tr2shifted.tr2");
+                var shotty = shifted.Models[(TR2Type)type];
+                shotty.Meshes = [shotty.Meshes[14]];
+                Import(level, model, shifted, shotty, null);
+
+                model.MeshTrees.Add(new() { OffsetZ = z, Flags = type == 6 ? _push : _read });
+                z += 128;
+            }
+            model.MeshTrees[^1].Flags = _pop;
+        }
+
+        {
+            var model = level.Models[_laraSkinGuns3];
+            {
+                var shifted = _reader2.Read("tr3shifted.tr2");
+                var shotty = shifted.Models[(TR2Type)(int)TR3Type.LaraShotgunAnimation_H];
+                shotty.Meshes = [shotty.Meshes[14]];
+                Import(level, model, shifted, shotty, null);
+
+                model.MeshTrees.Add(new() { OffsetX = -1900, OffsetY = -200, OffsetZ = 38, Flags = _read });
+            }
+            int z = 128;
+            foreach (var type in new[] { 388, 6, 8, 9, 7 }) // M16, MP5, Grenade, Harpoon, Rocket
+            {
+                var shifted = _reader2.Read("tr3shifted.tr2");
+                var shotty = shifted.Models[(TR2Type)type];
+                shotty.Meshes = [shotty.Meshes[14]];
+                Import(level, model, shifted, shotty, null);
+
+                model.MeshTrees.Add(new() { OffsetZ = z, Flags = type == 388 ? _push : _read });
+                z += 128;
+            }
+            model.MeshTrees[^1].Flags = _pop;
+        }
+    }
+
     static void FixNevada(TRModel model, TR2Level level)
     {
         {
@@ -3033,6 +3108,8 @@ class Program
         SortGuns1(level);
         SortGuns2(level);
         SortGuns3(level);
+
+        DoBackGuns(level);
 
         foreach (var t in new[] { _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3 })
         {

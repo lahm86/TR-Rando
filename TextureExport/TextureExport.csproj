@@ -20,9 +20,9 @@
     <ProjectReference Include="..\TRRandomizerCore\TRRandomizerCore.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Resources\TileTemplate.html">
+    <None Include="Resources\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </None>
   </ItemGroup>
   <PropertyGroup>
     <NoWarn>IDE0130</NoWarn>

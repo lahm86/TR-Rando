@@ -1,6 +1,5 @@
 ﻿using TRDataControl;
 using TRImageControl;
-using TRImageControl.Packing;
 using TRLevelControl.Model;
 
 namespace TextureExport;
@@ -176,13 +175,12 @@ public static class GunExtras
             hips.TexturedRectangles.Clear();
             hips.ColouredFaces.ToList().ForEach(f => f.Texture = 255);
 
-            var gun = shotgunAnim.Meshes[7];
-            shotgunAnim.Meshes = [hips, gun];
+            shotgunAnim.Meshes = [hips];
 
             Program.Import(level, model, caves, shotgunAnim, null);
 
             model.Meshes.RemoveAt(0);
-            for (int i = 0; i < 13; i++)
+            for (int i = 0; i < 14; i++)
                 model.Meshes.Insert(0, model.Meshes[0]);
 
             var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
@@ -191,31 +189,11 @@ public static class GunExtras
             (model.Animations[1].Commands[0] as TRSFXCommand).SoundID = (short)TR1SFX.LaraDraw;
             model.MeshTrees = shotgunAnim.MeshTrees;
 
-            gun = model.Meshes[14];
-            gun.Vertices.ForEach(v =>
-            {
-                v.Y += 204;
-                v.Z += 25;
-            });
-            gun.Centre = new() { X = 42, Y = 99, Z = 70 };
-            gun.CollRadius = 105;
-
-            gun.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v < 30));
-            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v < 30));
-            gun.Vertices.RemoveRange(0, 30);
-            gun.Normals.RemoveRange(0, 30);
-            gun.TexturedFaces.ToList().ForEach(f =>
-            {
-                for (int i = 0; i < f.Vertices.Count; i++)
-                {
-                    f.Vertices[i] -= 30;
-                }
-            });
-
             level.Models[(TR2Type)_map2[TR2Type.LaraShotgunAnim_H]] = model;
             hips = model.Meshes[0];
             model.Meshes[10] = model.Meshes[10].Clone();
             model.Meshes[13] = model.Meshes[13].Clone();
+            model.Meshes[14] = model.Meshes[14].Clone();
         }
 
         {
@@ -244,10 +222,9 @@ public static class GunExtras
             Program.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
-            var gun = model.Meshes[0];
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
             if (type != TR2Type.LaraAutoAnim_H)
-                model.Meshes[14] = gun;
+                model.Meshes[14] = model.Meshes[14].Clone();
             model.Animations = flares.Animations;
             model.MeshTrees = flares.MeshTrees;
 
@@ -309,10 +286,9 @@ public static class GunExtras
             Program.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
-            var gun = model.Meshes[0];
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
             if (type != TR3Type.LaraDeagleAnimation_H)
-                model.Meshes[14] = gun;
+                model.Meshes[14] = model.Meshes[14].Clone();
             model.Animations = flares.Animations;
             model.MeshTrees = flares.MeshTrees;
 
@@ -531,10 +507,9 @@ public static class GunExtras
             Program.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
-            var gun = model.Meshes[0];
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
             if (type != TR3Type.LaraDeagleAnimation_H)
-                model.Meshes[14] = gun;
+                model.Meshes[14] = model.Meshes[14].Clone();
             model.Animations = flares.Animations;
             model.MeshTrees = flares.MeshTrees;
 
@@ -617,7 +592,6 @@ public static class GunExtras
 
             model.Meshes.RemoveAt(0);
 
-            var gun = model.Meshes[0];
             if (type == TR2Type.LaraPistolAnim_H)
             {
                 model.Meshes[0] = hips;
@@ -635,7 +609,7 @@ public static class GunExtras
             }
             if (type != TR2Type.LaraPistolAnim_H && type != TR2Type.LaraAutoAnim_H)
             {
-                model.Meshes[14] = type == TR2Type.LaraUziAnim_H ? hips.Clone() : gun.Clone();
+                model.Meshes[14] = hips.Clone();
             }
 
             model.Animations = flares.Animations;
@@ -681,7 +655,6 @@ public static class GunExtras
 
             model.Meshes.RemoveAt(0);
 
-            var gun = model.Meshes[0];
             if (type == TR2Type.LaraPistolAnim_H)
             {
                 model.Meshes[0] = hips;
@@ -699,7 +672,7 @@ public static class GunExtras
             }
             if (type != TR2Type.LaraPistolAnim_H && type != TR2Type.LaraAutoAnim_H)
             {
-                model.Meshes[14] = type == TR2Type.LaraUziAnim_H ? hips.Clone() : gun.Clone();
+                model.Meshes[14] = hips.Clone();
             }
 
             model.Animations = flares.Animations;
@@ -749,7 +722,6 @@ public static class GunExtras
 
             model.Meshes.RemoveAt(0);
 
-            var gun = model.Meshes[0];
             if (type == TR2Type.LaraPistolAnim_H)
             {
                 model.Meshes[0] = hips;
@@ -767,7 +739,7 @@ public static class GunExtras
             }
             if (type != TR2Type.LaraPistolAnim_H && type != TR2Type.LaraAutoAnim_H)
             {
-                model.Meshes[14] = type == TR2Type.LaraUziAnim_H ? hips.Clone() : gun.Clone();
+                model.Meshes[14] = hips.Clone();
             }
 
             model.Animations = flares.Animations;
@@ -878,11 +850,10 @@ public static class GunExtras
             Program.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
-            var gun = model.Meshes[0].Clone();
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
             model.Meshes[10] = model.Meshes[10].Clone();
             if (type == TR2Type.LaraM16Anim_H)
-                model.Meshes[14] = gun;
+                model.Meshes[14] = model.Meshes[14].Clone();
             else
             {
                 model.Meshes[1] = model.Meshes[1].Clone();
@@ -938,7 +909,6 @@ public static class GunExtras
 
             model.Meshes.RemoveAt(0);
 
-            var gun = model.Meshes[0];
             if (type == TR3Type.LaraShotgunAnimation_H)
             {
                 model.Meshes[0] = hips;
@@ -956,7 +926,7 @@ public static class GunExtras
             }
             if (type != TR3Type.LaraDeagleAnimation_H)
             {
-                model.Meshes[14] = type == TR3Type.LaraUziAnimation_H ? hips.Clone() : gun.Clone();
+                model.Meshes[14] = hips.Clone();
             }
 
             model.Animations = flares.Animations;
@@ -986,19 +956,5 @@ public static class GunExtras
 
         Program.Repack(level);
         Program._reader2.Write(level, "tr3gymguns.tr2");
-        //var gunTypes = new[]
-        //    {
-        //        TR3Type.LaraShotgunAnimation_H, TR3Type.Shotgun_M_H, TR3Type.ShotgunAmmo_M_H,
-        //        TR3Type.LaraDeagleAnimation_H, TR3Type.Deagle_M_H,  TR3Type.DeagleAmmo_M_H,
-        //        TR3Type.LaraUziAnimation_H, TR3Type.Uzis_M_H, TR3Type.UziAmmo_M_H,
-        //        TR3Type.LaraHarpoonAnimation_H, TR3Type.Harpoon_M_H, TR3Type.Harpoons_M_H, TR3Type.HarpoonSingle2,
-        //        TR3Type.LaraMP5Animation_H, TR3Type.MP5_M_H, TR3Type.MP5Ammo_M_H, TR3Type.GunflareMP5_H,
-        //        TR3Type.LaraGrenadeAnimation_H, TR3Type.GrenadeLauncher_M_H, TR3Type.Grenades_M_H, TR3Type.GrenadeSingle,
-        //        TR3Type.LaraRocketAnimation_H, TR3Type.RocketLauncher_M_H, TR3Type.Rockets_M_H, TR3Type.RocketSingle,
-        //        TR3Type.LaraMagnumAnim_H, TR3Type.Magnums_M_H, TR3Type.MagnumAmmo_M_H,
-        //        TR3Type.LaraAutoAnim_H, TR3Type.Autos_M_H, TR3Type.AutoAmmo_M_H,
-        //        TR3Type.LaraM16Anim_H, TR3Type.M16_M_H, TR3Type.M16Ammo_M_H,
-        //        TR3Type.RedShellCasing_H,
-        //    };
     }
 }
