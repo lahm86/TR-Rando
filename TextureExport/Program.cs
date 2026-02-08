@@ -2981,6 +2981,7 @@ class Program
                 Import(level, model, shifted, shotty, null);
 
                 model.MeshTrees.Add(new() { OffsetX = -1900, OffsetY = -200, OffsetZ = 38, Flags = _read });
+                model.Meshes[^1].SelfCalculateBounds();
             }
             int z = 128;
             foreach (var type in new[] { 201, 219, 202, 203, 222 }) // M16, MP5, Grenade, Harpoon, Rocket
@@ -2991,6 +2992,7 @@ class Program
                 Import(level, model, shifted, shotty, null);
 
                 model.MeshTrees.Add(new() { OffsetZ = z, Flags = type == 201 ? _push : _read });
+                model.Meshes[^1].SelfCalculateBounds();
                 z += 128;
             }
             model.MeshTrees[^1].Flags = _pop;
@@ -3005,6 +3007,7 @@ class Program
                 Import(level, model, shifted, shotty, null);
 
                 model.MeshTrees.Add(new() { OffsetX = -1900, OffsetY = -200, OffsetZ = 38, Flags = _read });
+                model.Meshes[^1].SelfCalculateBounds();
             }
             int z = 128;
             foreach (var type in new[] { 6, 290, 7, 8, 295 }) // M16, MP5, Grenade, Harpoon, Rocket
@@ -3015,6 +3018,7 @@ class Program
                 Import(level, model, shifted, shotty, null);
 
                 model.MeshTrees.Add(new() { OffsetZ = z, Flags = type == 6 ? _push : _read });
+                model.Meshes[^1].SelfCalculateBounds();
                 z += 128;
             }
             model.MeshTrees[^1].Flags = _pop;
@@ -3029,6 +3033,7 @@ class Program
                 Import(level, model, shifted, shotty, null);
 
                 model.MeshTrees.Add(new() { OffsetX = -1900, OffsetY = -200, OffsetZ = 38, Flags = _read });
+                model.Meshes[^1].SelfCalculateBounds();
             }
             int z = 128;
             foreach (var type in new[] { 388, 6, 8, 9, 7 }) // M16, MP5, Grenade, Harpoon, Rocket
@@ -3039,9 +3044,105 @@ class Program
                 Import(level, model, shifted, shotty, null);
 
                 model.MeshTrees.Add(new() { OffsetZ = z, Flags = type == 388 ? _push : _read });
+                model.Meshes[^1].SelfCalculateBounds();
                 z += 128;
             }
             model.MeshTrees[^1].Flags = _pop;
+        }
+
+        foreach (var type in new[] { _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3 })
+        {
+            var model = level.Models[type];
+            var gunHand = model.Meshes[67];
+            var gunBack = model.Meshes[73];
+            var map = new Dictionary<ushort[], ushort[]>
+            {
+                [[0,1,2,3]] = [0,1,2,3],
+                [[5,3,4,2]] = [5,1,0,4],
+                [[6,5,4,7]] = [6,5,4,7],
+                [[0,3,5,6]] = [1,2,5,6],
+                [[20, 21,17,18]] = [17, 14, 18,19],
+                [[17,18,8,9]] = [18,19,8,10],
+            };
+            foreach (var (hand, back) in map)
+            {
+                var backFace = gunBack.TexturedRectangles.Find(f => f.Vertices.All(back.Contains));
+                var handFace = gunHand.TexturedRectangles.Find(f => f.Vertices.All(hand.Contains));
+                backFace.Texture = handFace.Texture;
+            }
+
+            var vs = new ushort[] { 5, 1, 0, 4 };
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(1);
+            vs = [22,23,24,25];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(1);
+
+            vs = [20,18,22,24];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(2);
+            vs = [20,21,24,25];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(2);
+            vs = [21,25,23,19];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(2);
+            vs = [18,19,22,23];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(2);
+            vs = [18,19,10,8];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(2);
+            
+            vs = [38,39,41,42];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(1);
+            vs = [48,42,41,43];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(1);
+            vs = [45,48,40,43];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(3);
+
+            map = new Dictionary<ushort[], ushort[]>
+            {
+                [[0, 12, 13, 14]] = [16,19,13,14],
+                [[16,13,12,15]] = [12,13,14,15],
+                [[4,15,16,17]] = [4,12,15,20],
+                [[0, 4,13,16]] = [16,4,12,13],
+                [[12,14,17,15]] = [15,14,20,19],
+                [[26,30,31,35]] = [30,37,31,36],
+                [[30,29,34,35]] = [37,35,36,34],
+                [[29,28,34,33]] = [35,33,32,34],
+                [[28,27,32,33]] = [28,29,32,33],
+                [[27,26,31,32]] = [29,30,28,31]
+            };
+            foreach (var (back, hand) in map)
+            {
+                var backFace = gunBack.TexturedRectangles.Find(f => f.Vertices.All(back.Contains));
+                var handFace = gunHand.TexturedRectangles.Find(f => f.Vertices.All(hand.Contains));
+                handFace.Texture = backFace.Texture;
+            }
+
+            vs = [13,16,19,14];
+            gunHand.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(1);
+            vs = [4,20,12,15];
+            gunHand.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(3);
+
+            if (type == _laraSkinGuns3)
+                break;
+
+
+            gunHand = model.Meshes[69];
+            gunBack = model.Meshes[75];
+            map = new Dictionary<ushort[], ushort[]>
+            {
+                [[19,15,5,17]] = [19,23,22,16],
+                [[17,5,0,16]] = [16,22,20,17],
+                [[12,18,16,0]] = [21,18,17,20],
+                [[12,15,18,19]] = [21,23,18,19],
+                [[16,17,18,19]] = [16, 17, 18, 19],
+            };
+            foreach (var (back, hand) in map)
+            {
+                var backFace = gunBack.TexturedRectangles.Find(f => f.Vertices.All(back.Contains));
+                var handFace = gunHand.TexturedRectangles.Find(f => f.Vertices.All(hand.Contains));
+                handFace.Texture = backFace.Texture;
+            }
+
+            vs = [16, 17, 18, 19];
+            gunBack.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(3);
+            gunHand.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(2);
         }
     }
 
@@ -4355,7 +4456,7 @@ class Program
 
     static void Main(string[] args)
     {
-        if (true)
+        if (false)
         {
             //GunExtras.MakeTR1Guns();
             //GunExtras.MakeTR1GymGuns();
