@@ -10,4 +10,5 @@ public enum TRBlendingMode
     Unused02      = 5,
     Wireframe     = 6,
     ForcedAlpha   = 7,
+    Reflective    = 8,
 }

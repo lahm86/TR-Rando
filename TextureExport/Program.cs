@@ -1,7 +1,6 @@
 ﻿using RectanglePacker.Organisation;
 using System.Diagnostics;
 using System.Drawing;
-using System.Reflection;
 using TextureExport.Types;
 using TRImageControl;
 using TRImageControl.Packing;
@@ -397,6 +396,7 @@ class Program
             t.Atlas,
             t.HasTriangleVertex,
             t.UVMode,
+            t.BlendingMode,
         };
 
         var indexedTextures = level.ObjectTextures
@@ -1734,10 +1734,10 @@ class Program
                 Texture = mesh.TexturedRectangles[9].Texture,
             });
 
-            baseModel.MeshTrees.Add(new() { OffsetX = -1020, Flags = _pop });
+            baseModel.MeshTrees.Add(new() { OffsetX = -1020, Flags = _read });
         }
 
-        if (false)
+        if (true)
         {
             // Glasses
             var caves = _reader2.Read("glasses.tr2");
@@ -1751,6 +1751,141 @@ class Program
             head.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v < 61));
 
             CleanupVertices(head);
+            var vs = new ushort[] {42,32,44,46 };
+            var f = head.TexturedRectangles.Find(g => g.Vertices.All(vs.Contains));
+            var m = f.Texture;
+            baseLevel.ObjectTextures[f.Texture].BlendingMode = TRBlendingMode.Reflective;
+            vs = [30,29,48];
+            f = head.TexturedTriangles.Find(g => g.Vertices.All(vs.Contains));
+            baseLevel.ObjectTextures[f.Texture].BlendingMode = TRBlendingMode.Reflective;
+            vs = [34,37,51];
+            f = head.TexturedTriangles.Find(g => g.Vertices.All(vs.Contains));
+            baseLevel.ObjectTextures[f.Texture].BlendingMode = TRBlendingMode.Reflective;
+            vs = [31,28,49];
+            f = head.TexturedTriangles.Find(g => g.Vertices.All(vs.Contains));
+            baseLevel.ObjectTextures[f.Texture].BlendingMode = TRBlendingMode.Reflective;
+
+            vs = [6,7,8,9];
+            f = head.TexturedRectangles.Find(g => g.Vertices.All(vs.Contains));
+            head.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Vertices = [12,15,14,13],
+                Texture = f.Texture,
+            });
+
+            {
+                m = f.Texture;
+                var t = baseLevel.ObjectTextures[f.Texture];
+                var tile = baseLevel.Images16[t.Atlas];
+                var img = new TRImage(tile.Pixels);
+                var bit = img.Export(t.Bounds);
+                bit.Write((c, x, y) => Color.FromArgb(32, 32, 32));
+                img.Import(bit, t.Position);
+                t.Bounds = new(t.Position, new(8, 8));
+                tile.Pixels = img.ToRGB555();
+            }
+
+            head.Vertices.ForEach(v => v.Z -= 1);//28
+            foreach (var v in new[] { 35,39,41,55,52,50,36, 29,30,32,42,44,46,48 })
+            {
+                head.Vertices[v].Z -= 1;
+            }
+
+            foreach (var v in new[] { 21,20,25,16,17,24 })
+                head.Vertices[v].X -= 1;
+            foreach (var v in new[] { 5,6,9,10,12,13 })
+                head.Vertices[v].X += 1;
+
+            foreach (var v in new[] { 16,17,18,19,24,27 })
+                head.Vertices[v].Y += 1;
+            foreach (var v in new[] { 20,21,22,23,25,26 })
+                head.Vertices[v].Y -= 1;
+
+            foreach (var v in new[] { 4,5,6,7,12,15 })
+                head.Vertices[v].Y += 1;
+            foreach (var v in new[] { 8,9,10,11,13,14 })
+                head.Vertices[v].Y -= 1;
+
+            foreach (var v in new[] { 6,7,8,9 })
+                head.Vertices[v].X -= 1;
+
+            head.Vertices[6].Y += 1;
+            head.Vertices[9].Y -= 1;
+
+            foreach (var v in new[] { 16,19,21,22 })
+                head.Vertices[v].X += 1;
+
+            head.Vertices[16].Y += 1;
+            head.Vertices[21].Y -= 1;
+
+            {
+                vs = [0,1,2,3];
+                head.TexturedRectangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+                var v0 = head.Vertices[0];
+                var v1 = head.Vertices[1];
+                var v2 = head.Vertices[2];
+                var v3 = head.Vertices[3];
+
+                v0.Y += 3;
+                v1.Y += 3;
+                v0.Z -= 1;
+                v1.Z -= 1;
+                v2.Z += 1;
+                v3.Z += 1;
+
+                var map = new Dictionary<ushort, ushort>();
+                for (ushort i = 0; i < 4; i++)
+                {
+                    map[i] = (ushort)head.Vertices.Count;
+                    head.Vertices.Add(head.Vertices[i].Clone());
+                    head.Normals.Add(head.Normals[i].Clone());
+                    if (i == 1 || i == 2)
+                        head.Vertices[^1].X-=3;
+                    else
+                        head.Vertices[^1].X+=3;
+                    head.Vertices[^1].Y -= 2;
+                }
+
+                head.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Texture = m,
+                    Vertices = [1, map[1], map[2],2],
+                });
+                head.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Texture = m,
+                    Vertices = [map[1], 1, 2, map[2]],
+                });
+
+                head.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Texture = m,
+                    Vertices = [map[0], 0, 3, map[3]],
+                });
+                head.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Texture = m,
+                    Vertices = [0, map[0], map[3], 3],
+                });
+
+                head.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Texture = m,
+                    Vertices = [map[1], map[0], map[3], map[2]],
+                });
+                head.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Texture = m,
+                    Vertices = [map[0], map[1], map[2], map[3]],
+                });
+            }
 
             baseModel.MeshTrees.Add(new() { OffsetX = -1160, Flags = _pop });
         }
