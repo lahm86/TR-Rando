@@ -25,7 +25,7 @@ public class TR2LevelControl : TRLevelControlBase<TR2Level>
             }
         };
 
-        TestVersion(level, TRFileVersion.TR2);
+        TestVersion(level, TRFileVersion.TR2, TRFileVersion.TR2Alpha);
         return level;
     }
 
@@ -110,7 +110,14 @@ public class TR2LevelControl : TRLevelControlBase<TR2Level>
     private void ReadPalette(TRLevelReader reader)
     {
         _level.Palette = reader.ReadColours(TRConsts.PaletteSize, TRConsts.Palette8Multiplier);
-        _level.Palette16 = reader.ReadColour4s(TRConsts.PaletteSize);
+        if (_level.Version.File == TRFileVersion.TR2Alpha)
+        {
+            _level.Palette16 = Enumerable.Range(0, TRConsts.PaletteSize).Select(i => new TRColour4()).ToList();
+        }
+        else
+        {
+            _level.Palette16 = reader.ReadColour4s(TRConsts.PaletteSize);
+        }
     }
 
     private void WritePalette(TRLevelWriter writer)
@@ -168,7 +175,7 @@ public class TR2LevelControl : TRLevelControlBase<TR2Level>
 
     private void ReadModelData(TRLevelReader reader)
     {
-        TRModelBuilder<TR2Type> builder = new(TRGameVersion.TR2, TRModelDataType.Level, _observer);
+        TRModelBuilder<TR2Type> builder = new(_level.Version.File == TRFileVersion.TR2Alpha ? TRGameVersion.TR1 : TRGameVersion.TR2, TRModelDataType.Level, _observer);
         _level.Models = builder.ReadModelData(reader, _meshBuilder);
     }
 
@@ -239,8 +246,20 @@ public class TR2LevelControl : TRLevelControlBase<TR2Level>
 
     private void ReadBoxes(TRLevelReader reader)
     {
-        TRBoxBuilder boxBuilder = new(_level.Version.Game, _observer);
-        _level.Boxes = boxBuilder.ReadBoxes(reader);
+        if (_level.Version.File == TRFileVersion.TR2Alpha)
+        {
+            _level.Boxes = new();
+            var bc = reader.ReadUInt32();
+            reader.ReadBytes((int)bc * 20);
+            var oc = reader.ReadUInt32();
+            reader.ReadBytes((int)oc * 2);
+            reader.ReadBytes((int)bc * 20);
+        }
+        else
+        {
+            TRBoxBuilder boxBuilder = new(_level.Version.Game, _observer);
+            _level.Boxes = boxBuilder.ReadBoxes(reader);
+        }
     }
 
     private void WriteBoxes(TRLevelWriter writer)
@@ -349,6 +368,10 @@ public class TR2LevelControl : TRLevelControlBase<TR2Level>
         }
 
         _level.SoundEffects = TRSFXBuilder.Build<TR2SFX, TR2SoundEffect>(soundMap, sfx);
+        if (_level.Version.File == TRFileVersion.TR2Alpha)
+        {
+            reader.BaseStream.Position = reader.BaseStream.Length;
+        }
     }
 
     private void WriteSoundEffects(TRLevelWriter writer)

@@ -2096,7 +2096,7 @@ class Program
         var map = new List<List<TRMesh>>();
         for (int i = 0; i < 16; i++)
             map.Add(baseLevel.Models[_laraSkin1].Meshes.GetRange(i * 15 + 1, 15));
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 7; i++)
             map.Add(baseLevel.Models[_laraSkin2].Meshes.GetRange(i * 15 + 1, 15));
 
         int xdiff = 84;
@@ -2649,6 +2649,17 @@ class Program
                 var mesh = map[_laraAntarc][i];
                 mesh.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v >= 20));
                 mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v >= 20));
+                CleanupVertices(mesh);
+            }
+        }
+
+        {
+            // Alt diving
+            foreach (var i in new[] { 1, 4 })
+            {
+                var mesh = map[_laraDivingAlpha][i];
+                mesh.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
+                mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
                 CleanupVertices(mesh);
             }
         }
@@ -3497,6 +3508,7 @@ class Program
     const int _laraAntarc = 19;
     const int _laraLeigh = 20;
     const int _laraLeighGold = 21;
+    const int _laraDivingAlpha = 22;
     const TR2Type _laraSkin1 = (TR2Type)270;
     const TR2Type _laraSkin2 = (TR2Type)271;
     const TR2Type _laraSkinExtra = (TR2Type)272;
@@ -4737,7 +4749,7 @@ class Program
 
         foreach (var oldType in new[] { _laraSkin1, _laraSkin2 })
         {
-            int max = oldType == _laraSkin1 ? 16 : 6;
+            int max = oldType == _laraSkin1 ? 16 : 7;
             var bigModel = level.Models[oldType];
             for (int i = 0; i < max; i++)
             {   
@@ -4768,8 +4780,62 @@ class Program
             //GunExtras.MakeTR2GymGuns();
             //GunExtras.MakeTR2HSHGuns();
             //GunExtras.MakeTR2VegasGuns();
-            GunExtras.MakeTR3Guns();
-            GunExtras.MakeTR3GymGuns();
+            //GunExtras.MakeTR3Guns();
+            //GunExtras.MakeTR3GymGuns();
+            var lvl = _reader2.Read("titanic1.phd");
+
+            foreach (var image in lvl.Images16)
+            {
+                var pix = new uint[image.Pixels.Length];
+                for (int i = 0; i < image.Pixels.Length; i++)
+                {
+                    ushort t = image.Pixels[i];
+                    var r = (t & 0x7c00) >> 10;
+                    var g = (t & 0x03e0) >> 5;
+                    var b = t & 0x001f;
+
+                    r = (int)((r / 31.0f) * 255.0f);
+                    g = (int)((g / 31.0f) * 255.0f);
+                    b = (int)((b / 31.0f) * 255.0f);
+
+                    if ((r == 255 && b == 255 && g == 0) ||
+                    (r == 0 && b == 0 && g == 0))
+                    {
+                        pix[i] = 0;
+                    }
+                    else
+                    {
+                        int a = 0xFF;
+                        pix[i] = (uint)b;
+                        pix[i] |= (uint)(g << 8);
+                        pix[i] |= (uint)(r << 16);
+                        pix[i] |= (uint)(a << 24);
+                    }
+                }
+                var img = new TRImage(pix);
+                image.Pixels = img.ToRGB555();
+            }
+
+            var wall = _reader2.Read("wall.tr2");
+            wall.ObjectTextures = lvl.ObjectTextures;
+            wall.Entities = lvl.Entities;
+            wall.Images16 = lvl.Images16;
+            wall.Images8 = lvl.Images8;
+            wall.Rooms = lvl.Rooms;
+            wall.FloorData = lvl.FloorData;
+            wall.Boxes = lvl.Boxes;
+            wall.Models = lvl.Models;
+            wall.SoundSources = lvl.SoundSources;
+            wall.Cameras = lvl.Cameras;
+            wall.AnimatedTextures = lvl.AnimatedTextures;
+            wall.CinematicFrames = lvl.CinematicFrames;
+            wall.DemoData = lvl.DemoData;
+            wall.LightMap = lvl.LightMap;
+            wall.Palette = lvl.Palette;
+            wall.Palette16 = lvl.Palette16;
+            wall.Sprites = lvl.Sprites;
+            wall.StaticMeshes = lvl.StaticMeshes;
+            _reader2.Write(wall, "titanic.tr2");
             return;
         }
 
@@ -4999,6 +5065,13 @@ class Program
                 map.Add([.. baseModel2.Meshes.GetRange(baseModel2.Meshes.Count - 15, 15)]);
             }
 
+            {
+                // 22. TR2 underwater alpha
+                var fathoms = _reader2.Read("titanic.tr2");
+                Import(baseLevel, baseModel1, fathoms, fathoms.Models[TR2Type.Lara], tr2Head);
+                map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
+            }
+
             if (true)
             {
                 // Mesh cleanup
@@ -5012,7 +5085,7 @@ class Program
                         map[lara][i].Centre = map[_laraClassic1][i].Centre;
                     }
                 }
-                foreach (var lara in new[] { _laraGym2, _laraDiving, _laraBomber, _laraRobe, _laraVegas, _laraGold3})
+                foreach (var lara in new[] { _laraGym2, _laraDiving, _laraBomber, _laraRobe, _laraVegas, _laraGold3, _laraDivingAlpha })
                 {
                     for (int i = 0; i < 15; i++)
                     {
@@ -5214,7 +5287,7 @@ class Program
                 {
                     // Fix TR2/3 gloves
                     foreach (var lara in new[] { _laraGym2, _laraClassic2, _laraDiving, _laraBomber, _laraGym3, 
-                        _laraClassic3, _laraCoastal, _laraLondon, _laraNevada, _laraAntarc})
+                        _laraClassic3, _laraCoastal, _laraLondon, _laraNevada, _laraAntarc, /*_laraDivingAlpha*/ })
                     {
                         var rght = map[lara][10];
                         var left = map[lara][13];
@@ -5282,6 +5355,126 @@ class Program
                     map[_laraLeighGold][10].TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v >= 8));
                     map[_laraLeighGold][10].TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v >= 8));
                     CleanupVertices(map[_laraLeighGold][10]);
+                }
+
+                {
+                    // Clone some diving suit stuff
+                    foreach (var m in new[] { 2, 3, 5, 6, 9, 10, 12, 13 })
+                    {
+                        map[_laraDivingAlpha][m] = map[_laraDiving][m].Clone();
+                    }
+
+                    void FixImgs(ushort[] texIds, Func<Color, int, int, Color> callback)
+                    {
+                        foreach (var id in texIds)
+                        {
+                            var tex = baseLevel.ObjectTextures[id];
+                            var img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                            img.Write(tex.Bounds, (c, x, y) => callback(c, x - tex.Bounds.X, y - tex.Bounds.Y));
+                            baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
+                        }
+                    }
+
+                    var mesh = map[_laraDivingAlpha][8];
+                    FixImgs([mesh.TexturedRectangles[0].Texture, mesh.TexturedRectangles[4].Texture],
+                        (c, x, y) => y >= 14 ? Color.FromArgb(224, 160, 96) : c);
+
+                    var vs = new ushort[] { 12, 13, 16, 17 };
+                    var f = map[_laraDiving][7].TexturedRectangles.Find(g => g.Vertices.All(vs.Contains));
+                    map[_laraDivingAlpha][7].TexturedRectangles.Find(g => g.Vertices.All(vs.Contains)).Texture = f.Texture;
+                    vs = [0, 1, 55, 56];
+                    f = map[_laraDivingAlpha][7].TexturedRectangles.Find(g => g.Vertices.All(vs.Contains));
+                    vs = [18,19,20,21];
+                    map[_laraDivingAlpha][7].TexturedRectangles.Find(g => g.Vertices.All(vs.Contains)).Texture = f.Texture;
+
+                    vs = [10,11,12,13];
+                    f = map[_laraDivingAlpha][7].TexturedRectangles.Find(g => g.Vertices.All(vs.Contains));
+                    FixImgs([f.Texture], (c, x, y) => c == Color.FromArgb(222,172,98) ? Color.FromArgb(224,160,96) : c);
+                    vs = [14,15,16,17];
+                    f = map[_laraDivingAlpha][7].TexturedRectangles.Find(g => g.Vertices.All(vs.Contains));
+                    FixImgs([f.Texture], (c, x, y) => y < 9 ? Color.FromArgb(224, 160, 96) : c);
+
+                    var ds = map[_laraDivingAlpha][1].TexturedFaces.Select(g => g.Texture).Distinct();
+                    var cs = new List<Color>();
+                    FixImgs([.. ds], (c, x, y) => c == Color.FromArgb(213, 164, 82) ? Color.FromArgb(224, 160, 96) : c);
+
+                    void DumpImg(string s, int fid, ushort id)
+                    {
+                        var tex = baseLevel.ObjectTextures[id];
+                        var img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                        var file = $"New Folder/Fixed/suit_{s}{fid}.png";
+                        if (File.Exists(file))
+                        {
+                            var seg = new TRImage(file);
+                            img.Import(seg, tex.Position);
+                            baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
+                        }
+                        else
+                        {
+                            var seg = img.Export(tex.Bounds);
+                            seg.Save($"New Folder/suit_{s}{fid}.png");
+                        }
+                    }
+                    for (int i = 0; i < map[_laraDivingAlpha][7].TexturedRectangles.Count; i++)
+                    {
+                        DumpImg(string.Empty, i, map[_laraDivingAlpha][7].TexturedRectangles[i].Texture);
+                    }
+                    for (int i = 0; i < map[_laraDivingAlpha][7].TexturedTriangles.Count; i++)
+                    {
+                        DumpImg("t", i, map[_laraDivingAlpha][7].TexturedTriangles[i].Texture);
+                    }
+
+                    for (int i = 0; i < map[_laraDivingAlpha][0].TexturedRectangles.Count; i++)
+                    {
+                        DumpImg("ass", i, map[_laraDivingAlpha][0].TexturedRectangles[i].Texture);
+                    }
+
+
+                    vs = [0,3,7,2,6];
+                    f = map[_laraDivingAlpha][8].TexturedTriangles.Find(g => g.Vertices.All(vs.Contains));
+                    FixImgs([f.Texture], (c, x, y) => Color.FromArgb(224, 160, 96));
+                }
+
+                if (false)
+                {
+                    // Add backpack to alpha diving suit
+                    var suitMesh = map[_laraDiving][7];
+                    var alphaMesh = map[_laraDivingAlpha][7];
+                    var vs = new ushort[] { 62,61,60,65,66,67,69,4,58,59,68,64,5,63 };
+                    var vmap = new Dictionary<ushort, ushort>();
+                    foreach (var vert in vs)
+                    {
+                        var vtx = suitMesh.Vertices[vert].Clone();
+                        var nor = suitMesh.Normals[vert].Clone();
+                        vmap[vert] = (ushort)alphaMesh.Vertices.Count;
+                        alphaMesh.Vertices.Add(vtx);
+                        alphaMesh.Normals.Add(nor);
+                        if (vmap[vert] == 59 || vmap[vert] == 64)
+                        {
+                            alphaMesh.Vertices[^1].Z += 1;
+                        }
+                    }
+
+                    foreach (var face in suitMesh.TexturedFaces.Where(f => f.Vertices.All(vs.Contains)))
+                    {
+                        var ff = face.Clone();
+                        for (int i = 0; i < ff.Vertices.Count; i++)
+                        {
+                            ff.Vertices[i] = vmap[ff.Vertices[i]];
+                        }
+                        if (face.Type == TRFaceType.Rectangle)
+                            alphaMesh.TexturedRectangles.Add(ff);
+                        else
+                            alphaMesh.TexturedTriangles.Add(ff);
+                    }
+
+                    vs = [67,72,66,71];
+                    alphaMesh.TexturedRectangles.Add(new()
+                    {
+                        Type = TRFaceType.Rectangle,
+                        Vertices = [64,59,4,5],
+                        Texture = alphaMesh.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture,
+                    });
                 }
             }
 
