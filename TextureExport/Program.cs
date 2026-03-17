@@ -3495,6 +3495,8 @@ class Program
     const int _laraLondon = 17;
     const int _laraNevada = 18;
     const int _laraAntarc = 19;
+    const int _laraLeigh = 20;
+    const int _laraLeighGold = 21;
     const TR2Type _laraSkin1 = (TR2Type)270;
     const TR2Type _laraSkin2 = (TR2Type)271;
     const TR2Type _laraSkinExtra = (TR2Type)272;
@@ -4735,7 +4737,7 @@ class Program
 
         foreach (var oldType in new[] { _laraSkin1, _laraSkin2 })
         {
-            int max = oldType == _laraSkin1 ? 16 : 4;
+            int max = oldType == _laraSkin1 ? 16 : 6;
             var bigModel = level.Models[oldType];
             for (int i = 0; i < max; i++)
             {   
@@ -4749,6 +4751,7 @@ class Program
             }
         }
 
+        type = 334;
         foreach (var oldType in new[] { _laraSkinExtra, _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3, _laraSkinLegs })
             models[(TR2Type)type++] = level.Models[oldType];
 
@@ -4974,6 +4977,28 @@ class Program
                 map.Add([.. baseModel2.Meshes.GetRange(baseModel2.Meshes.Count - 15, 15)]);
             }
 
+            {
+                // 20. Sophia Leigh
+                var antarc = _reader3.Read(@"F:\tomp\all levels\tr3\office.tr2");
+                Import(baseLevel, baseModel2, antarc, antarc.Models[TR3Type.SophiaLee], null);
+                map.Add([.. baseModel2.Meshes.GetRange(baseModel2.Meshes.Count - 15, 15)]);
+
+                // 21. Golden Sophia
+                for (int i = 61; i < 76; i++)
+                {
+                    if (i - 61 == 7)
+                    {
+                        var mesh = baseModel2.Meshes[i];
+                        mesh.Vertices[18].Y -= 26;
+                        mesh.Vertices[19].Y -= 26;
+                        foreach (var j in new[] { 40, 41 })
+                            mesh.Vertices[j].Y = mesh.Vertices[19].Y;
+                    }
+                    baseModel2.Meshes.Add(baseModel2.Meshes[i].Clone());
+                }
+                map.Add([.. baseModel2.Meshes.GetRange(baseModel2.Meshes.Count - 15, 15)]);
+            }
+
             if (true)
             {
                 // Mesh cleanup
@@ -4995,7 +5020,7 @@ class Program
                         map[lara][i].Centre = map[_laraClassic2][i].Centre;
                     }
                 }
-                foreach (var lara in new[] { _laraGym3, _laraCoastal, _laraNevada, _laraLondon, _laraAntarc })
+                foreach (var lara in new[] { _laraGym3, _laraCoastal, _laraNevada, _laraLondon, _laraAntarc, _laraLeigh, _laraLeighGold })
                 {
                     for (int i = 0; i < 15; i++)
                     {
@@ -5111,13 +5136,17 @@ class Program
                 }
 
                 {
-                    // Gold bacon, TR2/3 gold
+                    // Gold bacon, TR2/3 gold, gold Sophia
                     var goldTex = map[_laraGold1][0].TexturedRectangles[0].Texture;
                     foreach (var mesh in map[_laraGold2])
                     {
                         mesh.TexturedFaces.ToList().ForEach(f => f.Texture = goldTex);
                     }
                     foreach (var mesh in map[_laraGold3])
+                    {
+                        mesh.TexturedFaces.ToList().ForEach(f => f.Texture = goldTex);
+                    }
+                    foreach (var mesh in map[_laraLeighGold])
                     {
                         mesh.TexturedFaces.ToList().ForEach(f => f.Texture = goldTex);
                     }
@@ -5237,6 +5266,22 @@ class Program
                             a.Texture = b.Texture;
                         }
                     }
+                }
+
+                {
+                    // Give Sophia better hands
+                    foreach (var m in new[] { 10, 13 })
+                    {
+                        map[_laraLeigh][m].TexturedRectangles.Clear();
+                        map[_laraLeigh][m].TexturedTriangles.Clear();
+                        map[_laraLeigh][m].TexturedRectangles.AddRange(map[_laraRobe][m].TexturedRectangles.Select(f => f.Clone()));
+                        map[_laraLeigh][m].TexturedTriangles.AddRange(map[_laraRobe][m].TexturedTriangles.Select(f => f.Clone()));
+                        CleanupVertices(map[_laraLeigh][m]);
+                    }
+
+                    map[_laraLeighGold][10].TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v >= 8));
+                    map[_laraLeighGold][10].TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v >= 8));
+                    CleanupVertices(map[_laraLeighGold][10]);
                 }
             }
 
