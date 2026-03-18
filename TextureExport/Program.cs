@@ -5358,6 +5358,41 @@ class Program
                 }
 
                 {
+                    // Fix Sophia's hair
+                    var mesh = map[_laraLeigh][14];
+                    var vs = new ushort[] { 49,48,27 };
+                    var tex = mesh.TexturedTriangles.Find(f => f.Vertices.All(vs.Contains)).Texture;
+                    var verts = new List<List<ushort>>
+                    {
+                        new() {2,23,48},
+                        new() {49,48,23},
+                        new() {50,49,23},
+                        new() {23,25,50},
+                        new() {51,50,25},
+                        new() {46,51,25},
+                        new() {25,1,46},
+                        new() {47,46,1},
+                    };
+                    foreach (var vts in verts)
+                    {
+                        mesh.TexturedTriangles.Add(new()
+                        {
+                            Texture = tex,
+                            Vertices = vts,
+                            Type = TRFaceType.Triangle,
+                        });
+                    }
+
+                    vs = [26,29,46,47];
+                    foreach (var f in mesh.TexturedTriangles.Where(g => g.Vertices.All(vs.Contains)))
+                        f.Texture = tex;
+
+                    var goldTex = map[_laraGold1][0].TexturedRectangles[0].Texture;
+                    map[_laraLeighGold][14] = mesh.Clone();
+                    map[_laraLeighGold][14].TexturedFaces.ToList().ForEach(f => f.Texture = goldTex);
+                }
+
+                {
                     // Clone some diving suit stuff
                     foreach (var m in new[] { 2, 3, 5, 6, 9, 10, 12, 13 })
                     {
