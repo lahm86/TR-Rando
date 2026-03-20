@@ -2096,7 +2096,7 @@ class Program
         var map = new List<List<TRMesh>>();
         for (int i = 0; i < 16; i++)
             map.Add(baseLevel.Models[_laraSkin1].Meshes.GetRange(i * 15 + 1, 15));
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 8; i++)
             map.Add(baseLevel.Models[_laraSkin2].Meshes.GetRange(i * 15 + 1, 15));
 
         int xdiff = 84;
@@ -2661,6 +2661,128 @@ class Program
                 mesh.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
                 mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
                 CleanupVertices(mesh);
+            }
+        }
+
+        {
+            // N-Gage
+            foreach (var i in new[] { 1, 4 })
+            {
+                var mesh = map[_laraNGage][i];
+                mesh.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
+                mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
+                CleanupVertices(mesh);
+            }
+
+            {
+                var mesh = map[_laraNGage][7];
+                var vs = new ushort[] { 3,7,9,11, 2,6,8,10 };
+                var tex = mesh.TexturedTriangles.Find(f => f.Vertices.All(vs.Contains)).Texture;
+                mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+
+                var tinfo = baseLevel.ObjectTextures[tex];
+                var newTinfoA = new TRObjectTexture(tinfo.Bounds);
+                var newTinfoB = newTinfoA.Clone();
+                newTinfoA.Atlas = newTinfoB.Atlas = tinfo.Atlas;
+                newTinfoB.UVMode = TRUVMode.NE_AntiClockwise;
+                baseLevel.ObjectTextures.Add(newTinfoA);
+                baseLevel.ObjectTextures.Add(newTinfoB);
+
+                mesh.TexturedRectangles.Add(new()
+                {
+                    Texture = (ushort)(baseLevel.ObjectTextures.Count - 2),
+                    Type = TRFaceType.Rectangle,
+                    Vertices = [11,9,3,7],
+                });
+                mesh.TexturedRectangles.Add(new()
+                {
+                    Texture = (ushort)(baseLevel.ObjectTextures.Count - 1),
+                    Type = TRFaceType.Rectangle,
+                    Vertices = [8,10,6,2],
+                });
+
+                vs = [5, 6, 8, 9];
+                mesh = map[_laraNGage][0];
+                tex = mesh.TexturedTriangles.Find(f => f.Vertices.All(vs.Contains)).Texture;
+                mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+
+                tinfo = baseLevel.ObjectTextures[tex];
+
+                var mesh2 = map[_laraClassic1][0];
+                var goodFaces = mesh2.TexturedTriangles.FindAll(f => f.Vertices.All(vs.Contains));
+                var goodTex = goodFaces.First().Texture;
+                var goodInfo = baseLevel.ObjectTextures[goodTex];
+
+                var tile = baseLevel.Images16[tinfo.Atlas];
+                var img = new TRImage(tile.Pixels);
+                var pic = img.Export(tinfo.Bounds);
+
+                
+                var newTile = new TRImage(256, 256);
+                newTile.Import(pic, new(0, 0));
+                baseLevel.Images16.Add(new() { Pixels = newTile.ToRGB555() });
+
+                foreach (var goodFace in goodFaces)
+                {
+                    var ff = goodFace.Clone();
+                    var newTinfo = baseLevel.ObjectTextures[ff.Texture].Clone();
+                    newTinfo.Position = new(0, 0);
+                    newTinfo.Atlas = (ushort)(baseLevel.Images16.Count - 1);
+                    baseLevel.ObjectTextures.Add(newTinfo);
+                    ff.Texture = (ushort)(baseLevel.ObjectTextures.Count - 1);
+                    mesh.TexturedTriangles.Add(ff);
+                }
+            }
+
+            {
+                var mesh = map[_laraNGage][7];
+                for (int i = 26; i < 30; i++)
+                    mesh.Vertices[i].Z += 12;
+            }
+
+            {
+                var mesh = map[_laraNGage][2];
+                var vs = new ushort[] { 14,13,19,18 };
+                mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+                vs = [15, 14, 20, 19];
+                var tex = mesh.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture;
+                mesh.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Vertices = [14,13,18,19],
+                    Texture = tex,
+                });
+
+                mesh = map[_laraNGage][5];
+                vs = [14, 13, 19, 18 ];
+                mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+                vs = [15, 14, 20, 19];
+                tex = mesh.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture;
+                mesh.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Vertices = [13,14,19,18],
+                    Texture = tex,
+                });
+            }
+
+            {
+                void ReplImg(int fid, ushort id)
+                {
+                    var tex = baseLevel.ObjectTextures[id];
+                    var img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                    var file = @$"ngage\ng\{fid}.png";
+                    if (File.Exists(file))
+                    {
+                        var seg = new TRImage(file);
+                        img.Import(seg, tex.Position);
+                        baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
+                    }
+                }
+                var mesh = map[_laraNGage][0];
+                var vs = new ushort[] { 9,19,7,17 };
+                var f = mesh.TexturedRectangles.Find(ff => ff.Vertices.All(vs.Contains));
+                ReplImg(21, f.Texture);
             }
         }
 
@@ -3509,6 +3631,7 @@ class Program
     const int _laraLeigh = 20;
     const int _laraLeighGold = 21;
     const int _laraDivingAlpha = 22;
+    const int _laraNGage = 23;
     const TR2Type _laraSkin1 = (TR2Type)270;
     const TR2Type _laraSkin2 = (TR2Type)271;
     const TR2Type _laraSkinExtra = (TR2Type)272;
@@ -4688,6 +4811,22 @@ class Program
             z += zdiff;
         }
 
+        {
+            // TR1 N-Gage
+            var right = skin2.Meshes[110].Clone();
+            var left = skin2.Meshes[107].Clone();
+
+            vs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            Run(right);
+            Run(left);
+
+            baseModel.Meshes.Add(right);
+            baseModel.Meshes.Add(left);
+            baseModel.MeshTrees.Add(new() { OffsetZ = z, Flags = _read });
+            baseModel.MeshTrees.Add(new() { OffsetX = -88, OffsetZ = z, Flags = _read });
+            z += zdiff;
+        }
+
         baseModel.MeshTrees[^1].Flags = _pop;
 
         var frame = baseModel.Animations[0].Frames[0];
@@ -4749,7 +4888,7 @@ class Program
 
         foreach (var oldType in new[] { _laraSkin1, _laraSkin2 })
         {
-            int max = oldType == _laraSkin1 ? 16 : 7;
+            int max = oldType == _laraSkin1 ? 16 : 8;
             var bigModel = level.Models[oldType];
             for (int i = 0; i < max; i++)
             {   
@@ -4772,6 +4911,38 @@ class Program
 
     static void Main(string[] args)
     {
+        //{
+        //    var caves = _reader1.Read("level1.phd");
+        //    var ngage = _reader2.Read("ngage.tr2");
+        //    ConvertFlatFaces(caves, [caves.Models[TR1Type.Lara]]);
+
+        //    {
+        //        var packer = new TR1TexturePacker(caves);
+        //        var segs = packer.GetMeshRegions(caves.Models[TR1Type.Lara].Meshes).Values.SelectMany(v => v);
+        //        Directory.CreateDirectory("ngage");
+        //        Directory.CreateDirectory("ngage/caves");
+        //        int i = 0;
+        //        foreach (var r in segs)
+        //        {
+        //            r.Image.Save("ngage/caves/" + i + ".png");
+        //            i++;
+        //        }
+        //    }
+        //    {
+        //        var packer = new TR2TexturePacker(ngage);
+        //        var segs = packer.GetMeshRegions(ngage.Models[TR2Type.LaraSnowmobAnim_H].Meshes).Values.SelectMany(v => v);
+        //        Directory.CreateDirectory("ngage/ng");
+        //        int i = 0;
+        //        foreach (var r in segs)
+        //        {
+        //            r.Image.Save("ngage/ng/" + i + ".png");
+        //            i++;
+        //        }
+        //    }
+
+        //    return;
+        //}
+
         if (false)
         {
             //GunExtras.MakeTR1Guns();
@@ -5072,12 +5243,19 @@ class Program
                 map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
             }
 
+            {
+                // 23. N-Gage
+                var ngage = _reader2.Read("ngage.tr2");
+                Import(baseLevel, baseModel1, ngage, ngage.Models[TR2Type.LaraSnowmobAnim_H], tr1Head);
+                map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
+            }
+
             if (true)
             {
                 // Mesh cleanup
 
                 // Standardize spheres
-                foreach (var lara in new[] { _laraGym1, _laraCombo1, _laraMauled, _laraGold1 })
+                foreach (var lara in new[] { _laraGym1, _laraCombo1, _laraMauled, _laraGold1, _laraNGage })
                 {
                     for (int i = 0; i < 15; i++)
                     {
@@ -5510,6 +5688,14 @@ class Program
                         Vertices = [64,59,4,5],
                         Texture = alphaMesh.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture,
                     });
+                }
+
+                {
+                    // Bad N-Gage hands
+                    foreach (var m in new[] { 10, 13 })
+                    {
+                        map[_laraNGage][m] = map[_laraClassic1][m].Clone();
+                    }
                 }
             }
 
