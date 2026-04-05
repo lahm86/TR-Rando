@@ -1317,13 +1317,31 @@ class Program
         }
 
         {
-            // TR2/3 angry
+            // TR2 angry
             var caves = _reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var source = caves.Models[TR2Type.LaraUziAnim_H];
             source.Meshes = [source.Meshes[14]];
             source.MeshTrees.Clear();
             Import(baseLevel, baseModel, caves, source, null);
             baseModel.MeshTrees.Add(new() { OffsetZ = 160 });
+
+            var tr2Head = baseModel.Meshes[^1];
+            var ffa = new List<List<ushort>> { new() { 11,2,32 }, new() { 1,12,35 } };
+            foreach (var ff in ffa)
+            {
+                var t = tr2Head.TexturedTriangles.Find(f => f.Vertices.All(ff.Contains));
+                var img = GetImg(t, baseLevel);
+                var d = img.GetPixel(img.Width - 1, img.Height - 1);
+                img.Write((c, x, y) => c == d ? img.GetPixel(0, 0) : c);
+                var tinfo = baseLevel.ObjectTextures[t.Texture].Clone();
+                tinfo.Position = new(0, 0);
+                tinfo.Atlas = (ushort)baseLevel.Images16.Count;
+                var tile = new TRImage(256, 256);
+                tile.Import(img, new(0, 0));
+                baseLevel.Images16.Add(new() { Pixels = tile.ToRGB555() });
+                t.Texture = (ushort)baseLevel.ObjectTextures.Count;
+                baseLevel.ObjectTextures.Add(tinfo);
+            }
         }
 
         {
@@ -1334,6 +1352,24 @@ class Program
             source.MeshTrees.Clear();
             Import(baseLevel, baseModel, caves, source, null);
             baseModel.MeshTrees.Add(new() { OffsetZ = 160 });
+
+            var tr2Head = baseModel.Meshes[^1];
+            var ffa = new List<List<ushort>> { new() { 11, 2, 32 }, new() { 1, 12, 35 } };
+            foreach (var ff in ffa)
+            {
+                var t = tr2Head.TexturedTriangles.Find(f => f.Vertices.All(ff.Contains));
+                var img = GetImg(t, baseLevel);
+                var d = img.GetPixel(img.Width - 1, img.Height - 1);
+                img.Write((c, x, y) => c == d ? img.GetPixel(0, 0) : c);
+                var tinfo = baseLevel.ObjectTextures[t.Texture].Clone();
+                tinfo.Position = new(0, 0);
+                tinfo.Atlas = (ushort)baseLevel.Images16.Count;
+                var tile = new TRImage(256, 256);
+                tile.Import(img, new(0, 0));
+                baseLevel.Images16.Add(new() { Pixels = tile.ToRGB555() });
+                t.Texture = (ushort)baseLevel.ObjectTextures.Count;
+                baseLevel.ObjectTextures.Add(tinfo);
+            }
         }
 
         void Goldify(TRMesh mesh)
@@ -5120,6 +5156,22 @@ class Program
                 var wall = _reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
                 Import(baseLevel, baseModel1, wall, wall.Models[TR2Type.Lara], null);
                 tr2Head = baseModel1.Meshes[^1];
+                var ffa = new List<List<ushort>> { new() { 12, 35, 1 }, new() { 11, 32, 2 } };
+                foreach (var ff in ffa)
+                {
+                    var t = tr2Head.TexturedTriangles.Find(f => f.Vertices.All(ff.Contains));
+                    var img = GetImg(t, baseLevel);
+                    var d = img.GetPixel(img.Width - 1, img.Height - 1);
+                    img.Write((c, x, y) => c == d ? img.GetPixel(0, 0) : c);
+                    var tinfo = baseLevel.ObjectTextures[t.Texture].Clone();
+                    tinfo.Position = new(0, 0);
+                    tinfo.Atlas = (ushort)baseLevel.Images16.Count;
+                    var tile = new TRImage(256, 256);
+                    tile.Import(img, new(0, 0));
+                    baseLevel.Images16.Add(new() { Pixels = tile.ToRGB555() });
+                    t.Texture = (ushort)baseLevel.ObjectTextures.Count;
+                    baseLevel.ObjectTextures.Add(tinfo);
+                }
                 baseModel1.Meshes[^16] = tr2Head.Clone();
                 map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
             }
@@ -5181,6 +5233,23 @@ class Program
                 var jungle = _reader3.Read(@"F:\tomp\all levels\tr3\temple.tr2");
                 Import(baseLevel, baseModel1, jungle, jungle.Models[TR3Type.LaraSkin_H], null);
                 tr3Head = baseModel1.Meshes[^1];
+                {
+                    var ffa = new List<List<ushort>> { new() { 12, 35, 1 }, new() { 11,32,2 } };
+                    foreach (var ff in ffa)
+                    {
+                        var t = tr3Head.TexturedTriangles.Find(f => f.Vertices.All(ff.Contains));
+                        var img = GetImg(t, baseLevel);
+                        img.Write((c, x, y) => c.A == 0 ? img.GetPixel(0, 0) : c);
+                        var tinfo = baseLevel.ObjectTextures[t.Texture].Clone();
+                        tinfo.Position = new(0, 0);
+                        tinfo.Atlas = (ushort)baseLevel.Images16.Count;
+                        var tile = new TRImage(256, 256);
+                        tile.Import(img, new(0, 0));
+                        baseLevel.Images16.Add(new() { Pixels = tile.ToRGB555() });
+                        t.Texture = (ushort)baseLevel.ObjectTextures.Count;
+                        baseLevel.ObjectTextures.Add(tinfo);
+                    }
+                }
                 baseModel1.Meshes[^16] = tr3Head.Clone();
                 map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
             }
