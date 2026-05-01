@@ -462,6 +462,21 @@ class Program
         model.Meshes[1].TexturedRectangles[13].Rotate(2);
     }
 
+    private static void FixTR1PistolTransparency(TR2Level level)
+    {
+        var cc = Color.FromArgb(144, 160, 144);
+        var model = level.Models[_laraSkinGuns1];
+        foreach (var texId in model.Meshes[56].TexturedFaces.Select(f => f.Texture).Distinct())
+        {
+            var texInfo = level.ObjectTextures[texId];
+            var img = new TRImage(level.Images16[texInfo.Atlas].Pixels);
+            var clip = img.Export(texInfo.Bounds);
+            clip.Write((c, x, y) => c.A == 0 ? cc : c);
+            img.Import(clip, texInfo.Position);
+            level.Images16[texInfo.Atlas].Pixels = img.ToRGB555();
+        }
+    }
+
     static void FixTR1Magnums(TRModel model, TR1Level level)
     {
         var mesh = model.Meshes[0];
@@ -5834,6 +5849,7 @@ class Program
             SortGuns(baseLevel);
             DoLegs(baseLevel);
             //DoHolsters(baseLevel);
+            FixTR1PistolTransparency(baseLevel);
             SplitModels(baseLevel);
 
             Repack(baseLevel);
