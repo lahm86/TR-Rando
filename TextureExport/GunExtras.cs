@@ -1,4 +1,5 @@
-﻿using TRDataControl;
+﻿using System.Drawing;
+using TRDataControl;
 using TRImageControl;
 using TRLevelControl.Model;
 
@@ -344,6 +345,40 @@ public static class GunExtras
             };
         }
 
+        {
+            var wall = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            CreateModelLevel(wall, TR1Type.Pistols_M_H);
+
+            var img = new TRImage(wall.Images8[0].Pixels, wall.Palette);
+            var cc = Color.FromArgb(144, 160, 144);
+            var model = wall.Models[TR1Type.Pistols_M_H];
+            model.Meshes[0].TexturedTriangles.Clear();
+            model.Meshes[0].TexturedRectangles.Clear();
+            model.Meshes[0].ColouredRectangles.Clear();
+            model.Meshes[0].ColouredTriangles.Clear();
+            foreach (var texId in model.Meshes.SelectMany(m => m.TexturedFaces.Select(f => f.Texture).Distinct()))
+            {
+                var texInfo = wall.ObjectTextures[texId];
+                var clip = img.Export(texInfo.Bounds);
+                clip.Write((c, x, y) => c.A == 0 ? cc : c);
+                img.Import(clip, texInfo.Position);
+            }
+
+            level.Images16.Add(new() { Pixels = img.ToRGB555() });
+            level.Images8.Add(new());
+
+            wall.ObjectTextures.ForEach(o => o.Atlas = (ushort)(level.Images16.Count - 1));
+
+            var bb = level.ObjectTextures.Count;
+            level.ObjectTextures.AddRange(wall.ObjectTextures);
+            foreach (var f in model.Meshes.SelectMany(m => m.TexturedFaces))
+            {
+                f.Texture += (ushort)bb;
+            }
+
+            level.Models[(TR2Type)99] = model;
+        }
+
         return level;
     }
 
@@ -352,6 +387,53 @@ public static class GunExtras
         var level = BaseTR1Guns();
         Program.Repack(level);
         Program._reader2.Write(level, "tr1guns.tr2");
+    }
+
+    static void CreateModelLevel(TR1Level level, params TR1Type[] types)
+    {
+        // Remove everything from the level bar the data related to the provided types.
+        // Slight hack to export what we want, then re-import it into an empty level.
+        TR1DataExporter exporter = new();
+        foreach (TR1Type type in types)
+        {
+            exporter.Export(level, type);
+        }
+
+        ResetLevel(level, 1);
+        TR1DataImporter importer = new()
+        {
+            Level = level,
+            TypesToImport = new(types),
+        };
+        importer.Import();
+    }
+
+    public static void ResetLevel(TR1Level level, uint texturePageCount = 0)
+    {
+        level.Images8.Clear();
+        for (int i = 0; i < texturePageCount; i++)
+        {
+            level.Images8.Add(new() { Pixels = new byte[256 * 256] });
+        }
+
+        level.AnimatedTextures.Clear();
+        level.ObjectTextures.Clear();
+        level.Sprites.Clear();
+        level.Models.Clear();
+        level.SoundEffects.Clear();
+        level.SoundSources.Clear();
+        level.Rooms.Clear();
+        level.StaticMeshes.Clear();
+        level.Boxes.Clear();
+        level.Entities.Clear();
+        level.Cameras.Clear();
+        level.CinematicFrames.Clear();
+
+        for (int i = 0; i < 256; i++)
+        {
+            TRColour c = level.Palette[i];
+            c.Red = c.Green = c.Blue = 0;
+        }
     }
 
     public static void MakeTR1GymGuns()
