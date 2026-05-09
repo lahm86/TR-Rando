@@ -356,7 +356,27 @@ class Program
         var packer = new TR2TexturePacker(level);
         var regions = packer.GetMeshRegions(level.DistinctMeshes);
         new TRImageDeduplicator().Deduplicate(regions);
+
         var rects = regions.SelectMany(v => v.Value).ToList();
+        foreach (var rect in rects)
+        {
+            var newImg = new TRImage(rect.Image.Width + 2, rect.Image.Height + 2);
+            newImg.Import(rect.Image, new(1, 1));
+            newImg.Write((c, x, y) =>
+            {
+                int srcX = Math.Clamp(x, 1, newImg.Width - 2);
+                int srcY = Math.Clamp(y, 1, newImg.Height - 2);
+                return newImg.GetPixel(srcX, srcY);
+            });
+
+            rect.Image = newImg;
+            rect.GenerateID();
+            rect.MoveTo(new(0, 0));
+            var seg = rect.Segments[0].Texture as TRObjectTexture;
+            seg.Size = new(seg.Size.Width + 2, seg.Size.Height + 2);
+            rect.Bounds = seg.Bounds;
+        }
+
         foreach (var sprite in level.Sprites.Values)
         {
             rects.AddRange(packer.GetSpriteRegions(sprite).SelectMany(v => v.Value));
@@ -377,6 +397,13 @@ class Program
         packer.Options.OrderMode = PackingOrderMode.Area;
         packer.AddRectangles(rects);
         packer.Pack(true);
+
+        foreach (var rect in rects)
+        {
+            var seg = rect.Segments[0].Texture as TRObjectTexture;
+            seg.Size = new(seg.Size.Width - 2, seg.Size.Height - 2);
+            rect.MoveTo(new(seg.Position.X + 1, seg.Position.Y + 1));
+        }
 
         level.ObjectTextures.AddRange(rects.SelectMany(r => r.Segments.Select(s => s.Texture as TRObjectTexture)));
         level.ObjectTextures.RemoveAll(o => o is null);
@@ -472,6 +499,25 @@ class Program
             var img = new TRImage(level.Images16[texInfo.Atlas].Pixels);
             var clip = img.Export(texInfo.Bounds);
             clip.Write((c, x, y) => c.A == 0 ? cc : c);
+            img.Import(clip, texInfo.Position);
+            level.Images16[texInfo.Atlas].Pixels = img.ToRGB555();
+        }
+    }
+
+    private static void FixTR2BomberTransparency(TR2Level level, List<TRMesh> meshes)
+    {
+        var arm = meshes[8];
+        var vv = new ushort[] { 3, 6, 7, 8, 11, 12 };
+        var texIds = arm.TexturedFaces.Where(f => f.Vertices.All(vv.Contains))
+            .Select(f => f.Texture)
+            .Distinct()
+            .ToList();
+        foreach (var texId in texIds)
+        {
+            var texInfo = level.ObjectTextures[texId];
+            var img = new TRImage(level.Images16[texInfo.Atlas].Pixels);
+            var clip = img.Export(texInfo.Bounds);
+            clip.Write((c, x, y) => c.A == 0 ? clip.GetPixel(x - 1, y) : c);
             img.Import(clip, texInfo.Position);
             level.Images16[texInfo.Atlas].Pixels = img.ToRGB555();
         }
@@ -4994,7 +5040,7 @@ class Program
         //    return;
         //}
 
-        if (true)
+        if (false)
         {
             GunExtras.MakeTR1Guns();
             GunExtras.MakeTR1GymGuns();
@@ -5850,6 +5896,7 @@ class Program
             DoLegs(baseLevel);
             //DoHolsters(baseLevel);
             FixTR1PistolTransparency(baseLevel);
+            FixTR2BomberTransparency(baseLevel, map[_laraBomber]);
             SplitModels(baseLevel);
 
             Repack(baseLevel);
