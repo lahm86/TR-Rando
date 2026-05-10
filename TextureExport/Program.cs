@@ -3729,6 +3729,7 @@ class Program
     const int _laraLeighGold = 21;
     const int _laraDivingAlpha = 22;
     const int _laraNGage = 23;
+    const int _laraAntarcBeta = 24;
     const TR2Type _laraSkin1 = (TR2Type)270;
     const TR2Type _laraSkin2 = (TR2Type)271;
     const TR2Type _laraSkinExtra = (TR2Type)272;
@@ -4924,6 +4925,22 @@ class Program
             z += zdiff;
         }
 
+        {
+            // TR3 Antarc Beta
+            var right = skin2.Meshes[125].Clone();
+            var left = skin2.Meshes[122].Clone();
+
+            vs = [8,9,10,11,12,13,14,15,16,17];
+            Run(right);
+            Run(left);
+
+            baseModel.Meshes.Add(right);
+            baseModel.Meshes.Add(left);
+            baseModel.MeshTrees.Add(new() { OffsetZ = z, Flags = _read });
+            baseModel.MeshTrees.Add(new() { OffsetX = -88, OffsetZ = z, Flags = _read });
+            z += zdiff;
+        }
+
         baseModel.MeshTrees[^1].Flags = _pop;
 
         var frame = baseModel.Animations[0].Frames[0];
@@ -4985,7 +5002,7 @@ class Program
 
         foreach (var oldType in new[] { _laraSkin1, _laraSkin2 })
         {
-            int max = oldType == _laraSkin1 ? 16 : 8;
+            int max = oldType == _laraSkin1 ? 16 : 9;
             var bigModel = level.Models[oldType];
             for (int i = 0; i < max; i++)
             {   
@@ -5008,6 +5025,61 @@ class Program
 
     static void Main(string[] args)
     {
+        if (false)
+        {
+            var lvl = _reader3.Read("antarcbeta.tr2");
+            lvl.Models = new()
+            {
+                [TR3Type.Lara] = lvl.Models[TR3Type.LaraSkin_H],
+            };
+            ConvertFlatFaces(lvl, [lvl.Models[TR3Type.Lara]]);
+
+            //{
+            //    var packer = new TR3TexturePacker(lvl);
+            //    var segs = packer.GetMeshRegions([lvl.Models[TR3Type.Lara].Meshes[9]]).Values.SelectMany(v => v);
+            //    Directory.CreateDirectory("antabeta");
+            //    Directory.CreateDirectory("antabeta/og2");
+            //    int i = 0;
+            //    foreach (var r in segs)
+            //    {
+            //        r.Image.Save("antabeta/og2/" + i + ".png");
+            //        i++;
+            //    }
+            //}
+
+            foreach (var m in new[] { 7, 9 })
+            {
+                var packer = new TR3TexturePacker(lvl);
+                var segs = packer.GetMeshRegions([lvl.Models[TR3Type.Lara].Meshes[m]]).Values.SelectMany(v => v);
+                int i = 0;
+                foreach (var r in segs)
+                {
+                    var f = "antabeta/" + m + "/" + i + ".png";
+                    i++;
+                    if (!File.Exists(f)) continue;
+
+                    var img = new TRImage(f);
+                    var seg = r.Segments[0].Texture as TRObjectTexture;
+                    var tile = lvl.Images16[seg.Atlas];
+                    var tex = new TRImage(tile.Pixels);
+                    tex.Import(img, seg.Position);
+                    tile.Pixels = tex.ToRGB555();
+                }
+            }
+
+            foreach (var id in new[] { 1, 4 })
+            {
+                var mesh = lvl.Models[TR3Type.Lara].Meshes[id];
+                var vv = new ushort[] { 13, 14, 15, 16, 17, 18, 19, 20 };
+                mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(vv.Contains));
+                mesh.TexturedRectangles.RemoveAll(f => f.Vertices.All(vv.Contains));
+                CleanupVertices(mesh);
+            }
+
+            _reader3.Write(lvl, "antarcbeta_fixed.tr2");
+            return;
+        }
+
         //{
         //    var caves = _reader1.Read("level1.phd");
         //    var ngage = _reader2.Read("ngage.tr2");
@@ -5380,6 +5452,13 @@ class Program
                 map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
             }
 
+            {
+                // 24. TR3 antarc beta
+                var fathoms = _reader3.Read("antarcbeta_fixed.tr2");
+                Import(baseLevel, baseModel1, fathoms, fathoms.Models[TR3Type.Lara], tr3Head);
+                map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
+            }
+
             if (true)
             {
                 // Mesh cleanup
@@ -5401,7 +5480,7 @@ class Program
                         map[lara][i].Centre = map[_laraClassic2][i].Centre;
                     }
                 }
-                foreach (var lara in new[] { _laraGym3, _laraCoastal, _laraNevada, _laraLondon, _laraAntarc, _laraLeigh, _laraLeighGold })
+                foreach (var lara in new[] { _laraGym3, _laraCoastal, _laraNevada, _laraLondon, _laraAntarc, _laraLeigh, _laraLeighGold, _laraAntarcBeta })
                 {
                     for (int i = 0; i < 15; i++)
                     {
@@ -5827,6 +5906,14 @@ class Program
                         map[_laraNGage][m] = map[_laraClassic1][m].Clone();
                     }
                 }
+
+                {
+                    // Beta Antarc suit clones
+                    foreach (var m in new[] { 10, 13 })
+                    {
+                        map[_laraAntarcBeta][m] = map[_laraAntarc][m].Clone();
+                    }
+                }
             }
 
             {
@@ -5837,7 +5924,6 @@ class Program
 
                 baseModel1.Meshes = [baseModel1.Meshes[0]];
                 baseModel2.Meshes = [baseModel2.Meshes[0]];
-                var model = baseModel1;
                 for (int i = 0; i < map.Count; i++)
                 {
                     var mod = i < 16 ? baseModel1 : baseModel2;
