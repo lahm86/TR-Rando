@@ -504,7 +504,7 @@ class Program
         }
     }
 
-    private static void FixTR2BomberTransparency(TR2Level level, List<TRMesh> meshes)
+    private static void FixTR2Bomber(TR2Level level, List<TRMesh> meshes, List<TRMesh> meshesAlpha)
     {
         var arm = meshes[8];
         var vv = new ushort[] { 3, 6, 7, 8, 11, 12 };
@@ -520,6 +520,59 @@ class Program
             clip.Write((c, x, y) => c.A == 0 ? clip.GetPixel(x - 1, y) : c);
             img.Import(clip, texInfo.Position);
             level.Images16[texInfo.Atlas].Pixels = img.ToRGB555();
+        }
+
+        {
+            var tmp = new Dictionary<ushort, ushort>
+            {
+                [58] = 2,
+                [59] = 3,
+                [63] = 7,
+                [62] = 6,
+                [57] = 1,
+                [56] = 0,
+                [60] = 4,
+                [61] = 5,
+            };
+            foreach (var face in meshes[7].TexturedFaces)
+            {
+                for (int i = 0; i < face.Vertices.Count; i++)
+                {
+                    if (tmp.TryGetValue(face.Vertices[i], out var v))
+                    {
+                        face.Vertices[i] = v;
+                    }
+                }
+            }
+            CleanupVertices(meshes[7]);
+        }
+
+        {
+            var verts = new ushort[] { 4, 46, 68 };
+            var face = meshes[7].TexturedTriangles.Find(f => f.Vertices.All(verts.Contains)).Clone();
+            face.Vertices = [66,48,47];
+            meshes[7].TexturedTriangles.Add(face);
+        }
+
+        {
+            var verts = new List<ushort[]>
+            {
+                new ushort[]{ 1,48,66 },
+                //new ushort[]{56,66,47 },
+            };
+            foreach (var vts in verts)
+            {
+                var face = meshes[7].TexturedTriangles.Find(f => f.Vertices.All(vts.Contains));
+                var obj = level.ObjectTextures[face.Texture];
+                var tile = new TRImage(level.Images16[obj.Atlas].Pixels);
+                var bit = new TRImage("bombfix.png");
+                tile.Import(bit, obj.Position);
+                level.Images16[obj.Atlas].Pixels = tile.ToRGB555();
+            }
+        }
+
+        {
+
         }
     }
 
@@ -2183,6 +2236,30 @@ class Program
         {
             CleanupVertices(baseModel.Meshes[i]);
         }
+
+        FixWadToolMeh(baseLevel, baseModel.Meshes[0]);
+    }
+
+    static void FixWadToolMeh(TR2Level baseLevel, TRMesh mesh)
+    {
+        // Fix WadTool complaining about empty mesh
+        baseLevel.Images16.Add(new() { Pixels = new ushort[256 * 256] });
+        baseLevel.Images8.Add(new() { Pixels = new byte[256 * 256] });
+        var tinf = new TRObjectTexture(0, 0, 8, 8)
+        {
+            Atlas = (ushort)(baseLevel.Images16.Count - 1)
+        };
+        baseLevel.ObjectTextures.Add(tinf);
+        mesh.Vertices.Add(new());
+        mesh.Vertices.Add(new() { X = 1 });
+        mesh.Vertices.Add(new() { Z = 1 });
+        mesh.Normals = [new(), new(), new()];
+        mesh.TexturedTriangles.Add(new()
+        {
+            Type = TRFaceType.Triangle,
+            Texture = (ushort)(baseLevel.ObjectTextures.Count - 1),
+            Vertices = [0, 1, 2],
+        });
     }
 
     static void DoHolsters(TRModel baseModel, TR2Level baseLevel)
@@ -2193,7 +2270,7 @@ class Program
         var map = new List<List<TRMesh>>();
         for (int i = 0; i < 16; i++)
             map.Add(baseLevel.Models[_laraSkin1].Meshes.GetRange(i * 15 + 1, 15));
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 10; i++)
             map.Add(baseLevel.Models[_laraSkin2].Meshes.GetRange(i * 15 + 1, 15));
 
         int xdiff = 84;
@@ -2634,6 +2711,17 @@ class Program
             foreach (var i in new[] { 1, 4 })
             {
                 var mesh = map[_laraBomber][i];
+                mesh.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
+                mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
+                CleanupVertices(mesh);
+            }
+        }
+
+        {
+            // TR2 tibet alpha
+            foreach (var i in new[] { 1, 4 })
+            {
+                var mesh = map[_laraBomberAlpha][i];
                 mesh.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
                 mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v >= 13 && v <= 20));
                 CleanupVertices(mesh);
@@ -3730,6 +3818,7 @@ class Program
     const int _laraDivingAlpha = 22;
     const int _laraNGage = 23;
     const int _laraAntarcBeta = 24;
+    const int _laraBomberAlpha = 25;
     const TR2Type _laraSkin1 = (TR2Type)270;
     const TR2Type _laraSkin2 = (TR2Type)271;
     const TR2Type _laraSkinExtra = (TR2Type)272;
@@ -3783,6 +3872,10 @@ class Program
         }
 
         level.Models.Remove(_laraSkinGuns);
+
+        FixWadToolMeh(level, level.Models[_laraSkinGuns1].Meshes[0]);
+        FixWadToolMeh(level, level.Models[_laraSkinGuns2].Meshes[0]);
+        FixWadToolMeh(level, level.Models[_laraSkinGuns3].Meshes[0]);
     }
 
     static void SortGuns1(TR2Level level)
@@ -5002,7 +5095,7 @@ class Program
 
         foreach (var oldType in new[] { _laraSkin1, _laraSkin2 })
         {
-            int max = oldType == _laraSkin1 ? 16 : 9;
+            int max = oldType == _laraSkin1 ? 16 : 10;
             var bigModel = level.Models[oldType];
             for (int i = 0; i < max; i++)
             {   
@@ -5459,6 +5552,13 @@ class Program
                 map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
             }
 
+            {
+                // 25. TR2 Bomber alpha
+                var skidoo = _reader2.Read(@"tibetalpha.tr2");
+                Import(baseLevel, baseModel1, skidoo, skidoo.Models[TR2Type.Lara], tr2Head);
+                map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
+            }
+
             if (true)
             {
                 // Mesh cleanup
@@ -5472,7 +5572,7 @@ class Program
                         map[lara][i].Centre = map[_laraClassic1][i].Centre;
                     }
                 }
-                foreach (var lara in new[] { _laraGym2, _laraDiving, _laraBomber, _laraRobe, _laraVegas, _laraGold3, _laraDivingAlpha })
+                foreach (var lara in new[] { _laraGym2, _laraDiving, _laraBomber, _laraRobe, _laraVegas, _laraGold3, _laraDivingAlpha, _laraBomberAlpha })
                 {
                     for (int i = 0; i < 15; i++)
                     {
@@ -5914,6 +6014,41 @@ class Program
                         map[_laraAntarcBeta][m] = map[_laraAntarc][m].Clone();
                     }
                 }
+
+                {
+                    // Bomber alpha clones
+                    foreach (var m in new[] { 1, 2, 3, 4, 5, 6 })
+                    {
+                        map[_laraBomberAlpha][m] = map[_laraBomber][m].Clone();
+                    }
+                    foreach (var m in new[] { 10, 13 })
+                    {
+                        map[_laraBomberAlpha][m] = map[_laraClassic1][m].Clone();
+                    }
+
+                    var tmp = new Dictionary<ushort, ushort>
+                    {
+                        [67] = 7,
+                        [66] = 6,
+                        [62] = 2,
+                        [63] = 3,
+                        [64] = 4,
+                        [60] = 0,
+                        [61] = 1,
+                        [65] = 5,
+                    };
+                    foreach (var face in map[_laraBomberAlpha][7].TexturedFaces)
+                    {
+                        for (int i = 0; i < face.Vertices.Count; i++)
+                        {
+                            if (tmp.TryGetValue(face.Vertices[i], out var v))
+                            {
+                                face.Vertices[i] = v;
+                            }
+                        }
+                    }
+                    CleanupVertices(map[_laraBomberAlpha][7]);
+                }
             }
 
             {
@@ -5982,7 +6117,7 @@ class Program
             DoLegs(baseLevel);
             //DoHolsters(baseLevel);
             FixTR1PistolTransparency(baseLevel);
-            FixTR2BomberTransparency(baseLevel, map[_laraBomber]);
+            FixTR2Bomber(baseLevel, baseModel1.Meshes.GetRange(10 * 15 + 1, 15), baseModel2.Meshes.GetRange(136, 15));
             SplitModels(baseLevel);
 
             Repack(baseLevel);
