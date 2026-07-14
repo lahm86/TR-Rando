@@ -1,7 +1,6 @@
 ﻿using RectanglePacker.Organisation;
 using System.Diagnostics;
 using System.Drawing;
-using TextureExport.Types;
 using TRImageControl;
 using TRImageControl.Packing;
 using TRLevelControl;
@@ -12,14 +11,10 @@ namespace TextureExport;
 
 class Program
 {
-    enum Mode
-    {
-        Png, Html, Segments, Faces, Boxes, Dependencies, Dds, TexInfo,
-    }
-
     public static readonly TR1LevelControl _reader1 = new();
     public static readonly TR2LevelControl _reader2 = new();
     public static readonly TR3LevelControl _reader3 = new();
+    public static readonly TR4LevelControl _reader4 = new();
 
     public static void ConvertFlatFaces(TR1Level level, IEnumerable<TRModel> models)
     {
@@ -304,6 +299,35 @@ class Program
         ConvertFlatFaces(sourceLevel, [sourceModel]);
 
         var packer3 = new TR3TexturePacker(sourceLevel);
+        var regions = packer3.GetMeshRegions(sourceModel.Meshes)
+            .SelectMany(v => v.Value);
+        var originalInfos = sourceLevel.ObjectTextures.ToList();
+
+        var packer2 = new TR2TexturePacker(targetLevel, 1024);
+        packer2.AddRectangles(regions);
+        packer2.Pack(true);
+        targetLevel.ObjectTextures.AddRange(regions.SelectMany(r => r.Segments.Select(s => s.Texture as TRObjectTexture)));
+        sourceModel.Meshes.SelectMany(m => m.TexturedFaces)
+            .ToList()
+            .ForEach(f =>
+            {
+                f.Texture = (ushort)targetLevel.ObjectTextures.IndexOf(originalInfos[f.Texture]);
+            });
+
+        if (head == null)
+        {
+            targetModel.Meshes.AddRange(sourceModel.Meshes.Select(m => m.Clone()));
+        }
+        else
+        {
+            targetModel.Meshes.AddRange(sourceModel.Meshes.GetRange(0, 14).Select(m => m.Clone()));
+            targetModel.Meshes.Add(head.Clone());
+        }
+    }
+
+    public static void Import(TR2Level targetLevel, TRModel targetModel, TR4Level sourceLevel, TRModel sourceModel, TRMesh head)
+    {
+        var packer3 = new TR4TexturePacker(sourceLevel, TRGroupPackingMode.Object);
         var regions = packer3.GetMeshRegions(sourceModel.Meshes)
             .SelectMany(v => v.Value);
         var originalInfos = sourceLevel.ObjectTextures.ToList();
@@ -1241,6 +1265,22 @@ class Program
                 od.TexturedTriangles.AddRange(i.Select(g => g.Clone()));
             }
         }
+
+        {
+            // TR4 flare
+            var m = model.Meshes[64];
+            m.Vertices[4].Z = m.Vertices[6].Z;
+            m.Vertices[5].Z = m.Vertices[7].Z;
+            for (var i = 4; i < 8; i++)
+                m.Vertices[i].Z -= 6;
+            var f = m.TexturedRectangles.Find(r => r.Vertices.All(v => v < 4));
+            m.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f.Texture,
+                Vertices = [6, 7, 5, 4],
+            });
+        }
     }
 
     static void FixTR2Uzis(TRModel model, TR2Level level)
@@ -1377,6 +1417,17 @@ class Program
         }
     }
 
+    static void DeleteHands4(params TRMesh[] meshes)
+    {
+        foreach (var mesh in meshes)
+        {
+            mesh.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v <= 8));
+            mesh.ColouredRectangles.RemoveAll(f => f.Vertices.All(v => v <= 8));
+            mesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v <= 8));
+            mesh.ColouredTriangles.RemoveAll(f => f.Vertices.All(v => v <= 8));
+        }
+    }
+
     static void DeleteThighs(params TRMesh[] meshes)
     {
         foreach (var mesh in meshes)
@@ -1412,6 +1463,56 @@ class Program
             mesh2.ColouredRectangles.RemoveAll(f => f.Vertices.All(v => v < 13 || (v >= 21 && v <= 25)));
             mesh2.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v < 13 || (v >= 21 && v <= 25)));
             mesh2.ColouredTriangles.RemoveAll(f => f.Vertices.All(v => v < 13 || (v >= 21 && v <= 25)));
+        }
+    }
+
+    static void PlugTR4Head(TRMesh mesh, bool twin)
+    {
+        if (twin)
+        {
+            var vts = new ushort[] { 25, 49, 32 };
+            var f = mesh.TexturedTriangles.Find(g => g.Vertices.All(vts.Contains));
+            mesh.TexturedTriangles.Add(new()
+            {
+                Type = TRFaceType.Triangle,
+                Vertices = [77, 76, 78],
+                Texture = f.Texture,
+            });
+            mesh.TexturedTriangles.Add(new()
+            {
+                Type = TRFaceType.Triangle,
+                Vertices = [78, 79, 77],
+                Texture = f.Texture,
+            });
+            mesh.TexturedTriangles.Add(new()
+            {
+                Type = TRFaceType.Triangle,
+                Vertices = [71, 70, 69],
+                Texture = f.Texture,
+            });
+            mesh.TexturedTriangles.Add(new()
+            {
+                Type = TRFaceType.Triangle,
+                Vertices = [69, 68, 71],
+                Texture = f.Texture,
+            });
+        }
+        else
+        {
+            var vts = new ushort[] { 24, 40, 39 };
+            var f = mesh.TexturedTriangles.Find(g => g.Vertices.All(vts.Contains));
+            mesh.TexturedTriangles.Add(new()
+            {
+                Type = TRFaceType.Triangle,
+                Vertices = [38, 40, 39],
+                Texture = f.Texture,
+            });
+            mesh.TexturedTriangles.Add(new()
+            {
+                Type = TRFaceType.Triangle,
+                Vertices = [39, 37, 38],
+                Texture = f.Texture,
+            });
         }
     }
 
@@ -2203,7 +2304,7 @@ class Program
                 head.TexturedRectangles.Add(f2);
             }
 
-            baseModel.MeshTrees.Add(new() { OffsetX = -1160, OffsetZ = 120, Flags = _pop });
+            baseModel.MeshTrees.Add(new() { OffsetX = -1160, OffsetZ = 120, Flags = _read });
         }
 
         /// Fixes
@@ -2229,12 +2330,317 @@ class Program
             baseModel.Meshes[9] = goodHead;
         }
 
+        {
+            // TR4 crowbar
+            var alex = ReadTR4(@"F:\tomp\all levels\tr4\alexhub2.tr4");
+            var source = alex.Models[TR4Type.LaraCrowbarAnim];
+            source.Meshes = [source.Meshes[10]];
+            source.MeshTrees.Clear();
+            DeleteHands4(source.Meshes[0]);
+            Import(baseLevel, baseModel, alex, source, null);
+
+            var mesh = baseModel.Meshes[^1];
+            var offs = new ushort[] { 19, 18, 15, 16 };
+            var face = mesh.TexturedRectangles.Find(f => f.Vertices.All(offs.Contains));
+            face.Rotate(1);
+
+            var map = new Dictionary<ushort, ushort>
+            {
+                [27] = 18,
+                [30] = 15,
+                [21] = 12,
+                [24] = 9,
+            };
+            foreach (var f in mesh.TexturedFaces)
+            {
+                for (int i = 0; i < f.Vertices.Count; i++)
+                {
+                    if (map.TryGetValue(f.Vertices[i], out var v))
+                        f.Vertices[i] = v;
+                }
+            }
+            CleanupVertices(mesh);
+
+            baseModel.MeshTrees.Add(new() { OffsetX = -1300, Flags = _read });
+        }
+
+        var excludeFromCleanup = new List<int>();
+        {
+            // TR4 big braid
+            var seth = ReadTR4(@"F:\tomp\all levels\tr4\settomb1.tr4");
+            var source = seth.Models[TR4Type.LaraHair];
+            excludeFromCleanup.AddRange(Enumerable.Range(baseModel.Meshes.Count, source.Meshes.Count * 2));
+            Import(baseLevel, baseModel, seth, source, null);
+
+            baseModel.MeshTrees.Add(new() { OffsetX = -320, OffsetZ = 310, Flags = _read });
+            baseModel.MeshTrees.AddRange(source.MeshTrees);
+
+            // Golden
+            var golds = baseModel.Meshes.GetRange(baseModel.Meshes.Count - 6, 6).Select(t => t.Clone()).ToList();
+            var trees = baseModel.MeshTrees.GetRange(baseModel.MeshTrees.Count - 6, 6).Select(t => t.Clone()).ToList();
+            for (int i = 0; i < 6; i++)
+            {
+                var mesh = golds[i];
+                Goldify(mesh);
+                baseModel.Meshes.Add(mesh);
+                baseModel.MeshTrees.Add(trees[i]);
+                if (i == 0)
+                {
+                    trees[i].OffsetX -= 80;
+                }
+            }
+        }
+
+        for (int brd = 0; brd < 2; brd++)
+        {
+            // TR4 wee braid
+            var seth = ReadTR4(@"F:\tomp\all levels\tr4\angkor1.tr4");
+            var source = seth.Models[TR4Type.LaraHair];
+            excludeFromCleanup.AddRange(Enumerable.Range(baseModel.Meshes.Count, source.Meshes.Count * 2));
+            Import(baseLevel, baseModel, seth, source, null);
+
+            baseModel.MeshTrees.Add(new() { OffsetX = -480, OffsetZ = brd == 0 ? 310 : 496, Flags = _read });
+            baseModel.MeshTrees.AddRange(source.MeshTrees);
+
+            // Golden
+            var golds = baseModel.Meshes.GetRange(baseModel.Meshes.Count - 6, 6).Select(t => t.Clone()).ToList();
+            var trees = baseModel.MeshTrees.GetRange(baseModel.MeshTrees.Count - 6, 6).Select(t => t.Clone()).ToList();
+            for (int i = 0; i < 6; i++)
+            {
+                var mesh = golds[i];
+                Goldify(mesh);
+                baseModel.Meshes.Add(mesh);
+                baseModel.MeshTrees.Add(trees[i]);
+                if (i == 0)
+                {
+                    trees[i].OffsetX -= 80;
+                }
+            }
+        }
+
+        {
+            // TR4 angry
+            excludeFromCleanup.Add(baseModel.Meshes.Count);
+            var seth = ReadTR4(@"F:\tomp\all levels\tr4\settomb1.tr4");
+            var source = seth.Models[TR4Type.LaraScream];
+            source.Meshes = [source.Meshes[14]];
+            source.MeshTrees.Clear();
+            Import(baseLevel, baseModel, seth, source, null);
+            baseModel.MeshTrees.Add(new() { OffsetY = -330, OffsetZ = -23 + 3 * 160, Flags = _read });
+            PlugTR4Head(baseModel.Meshes[^1], false);
+        }
+
+        {
+            // Lara speech heads
+            int x = -320;
+            var types = new[] { TR4Type.LaraSpeechHead1, TR4Type.LaraSpeechHead2, TR4Type.LaraSpeechHead3, TR4Type.LaraSpeechHead4 };
+            foreach (var lvl in new[] { TR4LevelNames.ANGKOR, TR4LevelNames.CITADEL })
+            {
+                for (int i = 0; i < types.Length; i++)
+                {
+                    excludeFromCleanup.Add(baseModel.Meshes.Count);
+                    var seth = ReadTR4($@"F:\tomp\all levels\tr4\{lvl}");
+                    var source = seth.Models[types[i]];
+                    source.Meshes = [source.Meshes[14]];
+                    source.MeshTrees.Clear();
+                    Import(baseLevel, baseModel, seth, source, null);
+
+                    if (i == 0)
+                    {
+                        baseModel.MeshTrees.Add(new() { OffsetX = x, OffsetY = -330, OffsetZ = -23, Flags = _read });
+                    }
+                    else
+                    {
+                        baseModel.MeshTrees.Add(new() { OffsetZ = 160 });
+                    }
+                    PlugTR4Head(baseModel.Meshes[^1], lvl == TR4LevelNames.ANGKOR);
+                }
+                x -= 160;
+            }
+        }
+
+        {
+            // TR4 torch
+            var alex = ReadTR4(@"F:\tomp\all levels\tr4\citnew.tr4");
+            var source = alex.Models[TR4Type.LaraTorchAnim];
+            source.Meshes = [source.Meshes[13]];
+            source.MeshTrees.Clear();
+            DeleteHands(source.Meshes[0]);
+            Import(baseLevel, baseModel, alex, source, null);
+
+            var mesh = baseModel.Meshes[^1];
+            var map = new Dictionary<ushort, ushort>
+            {
+                [8] = 20,
+                [12] = 26,
+                [14] = 27,
+                [10] = 19,
+            };
+            foreach (var f in mesh.TexturedFaces)
+            {
+                for (int i = 0; i < f.Vertices.Count; i++)
+                {
+                    if (map.TryGetValue(f.Vertices[i], out var v))
+                        f.Vertices[i] = v;
+                }
+            }
+            CleanupVertices(mesh);
+
+            baseModel.MeshTrees.Add(new() { OffsetX = -1460, Flags = _read });
+        }
+        {
+            // TR4 waterskin
+            var alex = ReadTR4(@"F:\tomp\all levels\tr4\joby4a.tr4");
+            var source = alex.Models[TR4Type.LaraWaterMesh];
+            source.Meshes = [source.Meshes[13]];
+            source.MeshTrees.Clear();
+            DeleteHands4(source.Meshes[0]);
+            Import(baseLevel, baseModel, alex, source, null);
+            baseModel.MeshTrees.Add(new() { OffsetX = -1640, OffsetZ = 150, Flags = _read });
+
+            var mesh = baseModel.Meshes[^1];
+            var vets = new List<List<ushort>>
+            {
+                new() { 52,48,16,28 },
+                new() { 51,52,28,26 },
+                new() { 50,51,26,11 },
+                new() { 49,50,11,25 },
+                new() { 47,49,25,27 },
+                new() { 48,47,27,16 },
+            };
+            foreach (var v in vets)
+            {
+                mesh.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Texture = mesh.TexturedRectangles[5].Texture,
+                    Vertices = v,
+                });
+            }
+        }
+        {
+            // TR4 hook and pole
+            var alex = ReadTR4(@"F:\tomp\all levels\tr4\alexhub2.tr4");
+            var source = alex.Models[TR4Type.Meshswap1];
+            source.Meshes = [source.Meshes[10]];
+            source.MeshTrees.Clear();
+            DeleteHands(source.Meshes[0]);
+            Import(baseLevel, baseModel, alex, source, null);
+            baseModel.MeshTrees.Add(new() { OffsetX = -1780, Flags = _read });
+        }
+        {
+            // TR4 binos
+            var alex = ReadTR4(@"F:\tomp\all levels\tr4\alexhub2.tr4");
+            var source = alex.Models[TR4Type.Meshswap2];
+            source.Meshes = [source.Meshes[10]];
+            source.MeshTrees.Clear();
+            DeleteHands(source.Meshes[0]);
+            Import(baseLevel, baseModel, alex, source, null);
+            baseModel.MeshTrees.Add(new() { OffsetX = -960, OffsetZ = 510, Flags = _read });
+        }        
+        {
+            // TR4 detonator
+            var alex = ReadTR4(@"F:\tomp\all levels\tr4\nutrench.tr4");
+            var source = alex.Models[TR4Type.Meshswap3];
+            source.Meshes = [source.Meshes[10]];
+            source.MeshTrees.Clear();
+            DeleteHands(source.Meshes[0]);
+            Import(baseLevel, baseModel, alex, source, null);
+            baseModel.MeshTrees.Add(new() { OffsetX = -1160, OffsetZ = 510, Flags = _read });
+        }
+        {
+            // TR4 shovel
+            var alex = ReadTR4(@"F:\tomp\all levels\tr4\joby1a.tr4");
+            var source = alex.Models[TR4Type.Meshswap1];
+            source.Meshes = [source.Meshes[13]];
+            source.MeshTrees.Clear();
+            DeleteHands4(source.Meshes[0]);
+            Import(baseLevel, baseModel, alex, source, null);
+
+            var mesh = baseModel.Meshes[^1];
+            var map = new Dictionary<ushort, ushort>
+            {
+                [73] = 69,
+                [76] = 72,
+                [75] = 71,
+                [74] = 70,
+            };
+            foreach (var f in mesh.TexturedFaces)
+            {
+                for (int i = 0; i < f.Vertices.Count; i++)
+                {
+                    if (map.TryGetValue(f.Vertices[i], out var v))
+                        f.Vertices[i] = v;
+                }
+            }
+            CleanupVertices(mesh);
+
+            baseModel.MeshTrees.Add(new() { OffsetX = -1320, OffsetZ = 540, Flags = _read });
+        }
+        {
+            // TR4 jerrycan
+            var alex = ReadTR4(@"F:\tomp\all levels\tr4\joby4a.tr4");
+            var source = alex.Models[TR4Type.LaraPetrolMesh];
+            source.Meshes = [source.Meshes[13]];
+            source.MeshTrees.Clear();
+            DeleteHands4(source.Meshes[0]);
+            Import(baseLevel, baseModel, alex, source, null);
+            baseModel.MeshTrees.Add(new() { OffsetX = -1460, OffsetZ = 630, Flags = _read });
+        }
+        {
+            // TR4 sandbag
+            var alex = ReadTR4(@"F:\tomp\all levels\tr4\joby4a.tr4");
+            var source = alex.Models[TR4Type.LaraDirtMesh];
+            source.Meshes = [source.Meshes[13]];
+            source.MeshTrees.Clear();
+            DeleteHands4(source.Meshes[0]);
+            Import(baseLevel, baseModel, alex, source, null);
+            baseModel.MeshTrees.Add(new() { OffsetX = -1640, OffsetZ = 630, Flags = _read });
+
+            var mesh = baseModel.Meshes[^1];
+            var vets = new List<List<ushort>>
+            {
+                new() { 24, 26, 25, 22 },
+                new() { 27, 37, 36, 25 },
+                new() { 45, 44, 34, 36 },
+                new() { 44, 35, 22, 34 },
+            };
+            foreach (var v in vets)
+            {
+                mesh.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Texture = mesh.TexturedRectangles[5].Texture,
+                    Vertices = v,
+                });
+            }
+            vets =
+            [
+                [24, 22, 23],
+                [27, 25, 26],
+                [45, 36, 37],
+                [35, 23, 22],
+            ];
+            foreach (var v in vets)
+            {
+                mesh.TexturedTriangles.Add(new()
+                {
+                    Type = TRFaceType.Triangle,
+                    Texture = mesh.TexturedTriangles[0].Texture,
+                    Vertices = v,
+                });
+            }
+        }
+        
+
+        //baseModel.MeshTrees[^1].Flags = _pop;
         var frame = baseModel.Animations[0].Frames[0];
         frame.Rotations.AddRange(Enumerable.Repeat(0, baseModel.Meshes.Count - 1).Select(i => new TRAnimFrameRotation()));
 
         for (int i = 1; i < baseModel.Meshes.Count; i++)
         {
-            CleanupVertices(baseModel.Meshes[i]);
+            if (!excludeFromCleanup.Contains(i))
+                CleanupVertices(baseModel.Meshes[i]);
         }
 
         FixWadToolMeh(baseLevel, baseModel.Meshes[0]);
@@ -2264,13 +2670,10 @@ class Program
 
     static void DoHolsters(TRModel baseModel, TR2Level baseLevel)
     {
-        //var baseModel = MakeBaseModel();
-        //baseLevel.Models[_laraSkinGuns] = baseModel;
-
         var map = new List<List<TRMesh>>();
         for (int i = 0; i < 16; i++)
             map.Add(baseLevel.Models[_laraSkin1].Meshes.GetRange(i * 15 + 1, 15));
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 14; i++)
             map.Add(baseLevel.Models[_laraSkin2].Meshes.GetRange(i * 15 + 1, 15));
 
         int xdiff = 84;
@@ -3548,7 +3951,21 @@ class Program
             ]);
         }
 
-        
+        // TR4
+
+        {
+            var wall = _reader4.Read(@"F:\tomp\all levels\tr4\settomb1.tr4");
+            var model = wall.Models[TR4Type.LaraFlareAnim];
+            model.Meshes =
+            [
+                model.Meshes[13],
+            ];
+            DeleteHands(model.Meshes[0]);
+            Import(baseLevel, baseModel, wall, model, null);
+            baseModel.MeshTrees.Add(new() { OffsetX = -1226, OffsetZ = 48, Flags = _read });
+        }
+
+
 
         var frame = baseModel.Animations[0].Frames[0];
         for (int i = 1; i < baseModel.Meshes.Count; i++)
@@ -3564,11 +3981,13 @@ class Program
 
         DoHolsters(baseModel, baseLevel);
 
-        // Repeate after final fixes
+        // Repeat after final fixes
         for (int i = 1; i < baseModel.Meshes.Count; i++)
         {
             CleanupVertices(baseModel.Meshes[i]);
         }
+
+
     }
 
     public static void CleanupVertices(TRMesh mesh)
@@ -3669,7 +4088,7 @@ class Program
             model.MeshTrees[^1].Flags = _pop;
         }
 
-        foreach (var type in new[] { _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3 })
+        foreach (var type in new[] { _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3, _laraSkinGuns4 })
         {
             var model = level.Models[type];
             var gunHand = model.Meshes[67];
@@ -3738,7 +4157,7 @@ class Program
             vs = [4,20,12,15];
             gunHand.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(3);
 
-            if (type == _laraSkinGuns3)
+            if (type == _laraSkinGuns3 || type == _laraSkinGuns4)
                 break;
 
 
@@ -3819,25 +4238,49 @@ class Program
     const int _laraNGage = 23;
     const int _laraAntarcBeta = 24;
     const int _laraBomberAlpha = 25;
+    const int _laraYoung = 26;
+    const int _laraYoungGold = 27;
+    const int _laraClassic4 = 28;
+    const int _laraGold4 = 29;
     const TR2Type _laraSkin1 = (TR2Type)270;
     const TR2Type _laraSkin2 = (TR2Type)271;
     const TR2Type _laraSkinExtra = (TR2Type)272;
     const TR2Type _laraSkinGuns1 = (TR2Type)273;
     const TR2Type _laraSkinGuns2 = (TR2Type)274;
     const TR2Type _laraSkinGuns3 = (TR2Type)275;
+    const TR2Type _laraSkinGuns4 = (TR2Type)339;
     const TR2Type _laraSkinGuns = (TR2Type)276;
     const TR2Type _laraSkinLegs = (TR2Type)277;
+    const TR2Type _laraJoints1 = (TR2Type)340;
+    const TR2Type _laraJoints2 = (TR2Type)341;
+    const TR2Type _laraJoints3 = (TR2Type)342;
+    const TR2Type _laraJoints4 = (TR2Type)343;
 
+
+    static TR4Level ReadTR4(string lvl)
+    {
+        var level = _reader4.Read(lvl);
+        foreach (var obj in level.ObjectTextures.Where(obj => obj.HasTriangleVertex))
+        {
+            obj.Vertices[^1].U = 0;
+            obj.Vertices[^1].V = 0;
+        }
+        return level;
+    }
 
     static void SortGuns(TR2Level level)
     {
+        while (level.Images8.Count != level.Images16.Count)
+            level.Images8.Add(level.Images8[^1]);
+        _reader2.Write(level, "fhfhf.tr2");
         SortGuns1(level);
         SortGuns2(level);
         SortGuns3(level);
+        SortGuns4(level);
 
         DoBackGuns(level);
 
-        foreach (var t in new[] { _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3 })
+        foreach (var t in new[] { _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3, _laraSkinGuns4 })
         {
             var model = level.Models[t];
             var frame = model.Animations[0].Frames[0];
@@ -3862,7 +4305,7 @@ class Program
                 face.Rotate(3);
             }
 
-            if (t == _laraSkinGuns2 || t == _laraSkinGuns3)
+            if (t == _laraSkinGuns2 || t == _laraSkinGuns3 || t == _laraSkinGuns4)
             {
                 var nevPistols = model.Meshes[48];
                 nevPistols.TexturedRectangles.RemoveAll(f => f.Vertices.Any(v => v == 30 || v == 32));
@@ -3876,6 +4319,7 @@ class Program
         FixWadToolMeh(level, level.Models[_laraSkinGuns1].Meshes[0]);
         FixWadToolMeh(level, level.Models[_laraSkinGuns2].Meshes[0]);
         FixWadToolMeh(level, level.Models[_laraSkinGuns3].Meshes[0]);
+        FixWadToolMeh(level, level.Models[_laraSkinGuns4].Meshes[0]);
     }
 
     static void SortGuns1(TR2Level level)
@@ -4731,6 +5175,53 @@ class Program
         baseModel.Meshes[69] = gunModel.Meshes[53].Clone(); // Grenade
     }
 
+    static void SortGuns4(TR2Level level)
+    {
+        var baseModel = level.Models[_laraSkinGuns4] = level.Models[_laraSkinGuns3].Clone();
+        var gunModel = level.Models[_laraSkinGuns];
+        baseModel.Meshes[66] = gunModel.Meshes[64].Clone(); // Flare
+    }
+
+    static void DoJoints(TR2Level baseLevel)
+    {
+        var map = new Dictionary<TR2Type, string>
+        {
+            [_laraJoints1] = TR4LevelNames.ANGKOR,
+            [_laraJoints3] = TR4LevelNames.SETH,
+        };
+        foreach (var (type, lvl) in map)
+        {
+            var level = _reader4.Read($@"F:\tomp\all levels\tr4\{lvl}");
+            var joints = level.Models[TR4Type.LaraSkinJoints];
+            var model = new TRModel
+            {
+                MeshTrees = joints.MeshTrees,
+                Animations = joints.Animations,
+            };
+            Import(baseLevel, model, level, joints, null);
+            baseLevel.Models[type] = model;
+        }
+
+        void Goldify(TRMesh mesh)
+        {
+            var goldTex = baseLevel.Models[_laraSkin1].Meshes[61].TexturedFaces.First().Texture;
+            foreach (var f in mesh.TexturedFaces)
+                f.Texture = goldTex;
+        }
+
+        var map2 = new Dictionary<TR2Type, TR2Type>
+        {
+            [_laraJoints1] = _laraJoints2,
+            [_laraJoints3] = _laraJoints4,
+        };
+        foreach (var (norm, gold) in map2)
+        {
+            var model = baseLevel.Models[norm].Clone();
+            model.Meshes.ForEach(m => Goldify(m));
+            baseLevel.Models[gold] = model;
+        }
+    }
+
     static void DoLegs(TR2Level level)
     {
         var baseModel = MakeBaseModel();
@@ -5095,7 +5586,7 @@ class Program
 
         foreach (var oldType in new[] { _laraSkin1, _laraSkin2 })
         {
-            int max = oldType == _laraSkin1 ? 16 : 10;
+            int max = oldType == _laraSkin1 ? 16 : 14;
             var bigModel = level.Models[oldType];
             for (int i = 0; i < max; i++)
             {   
@@ -5110,7 +5601,11 @@ class Program
         }
 
         type = 334;
-        foreach (var oldType in new[] { _laraSkinExtra, _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3, _laraSkinLegs })
+        foreach (var oldType in new[] { _laraSkinExtra, _laraSkinGuns1, _laraSkinGuns2, _laraSkinGuns3, _laraSkinLegs, _laraSkinGuns4 })
+            models[(TR2Type)type++] = level.Models[oldType];
+
+        type = 340;
+        foreach (var oldType in new[] { _laraJoints1, _laraJoints2, _laraJoints3, _laraJoints4 })
             models[(TR2Type)type++] = level.Models[oldType];
 
         level.Models = models;
@@ -5172,38 +5667,6 @@ class Program
             _reader3.Write(lvl, "antarcbeta_fixed.tr2");
             return;
         }
-
-        //{
-        //    var caves = _reader1.Read("level1.phd");
-        //    var ngage = _reader2.Read("ngage.tr2");
-        //    ConvertFlatFaces(caves, [caves.Models[TR1Type.Lara]]);
-
-        //    {
-        //        var packer = new TR1TexturePacker(caves);
-        //        var segs = packer.GetMeshRegions(caves.Models[TR1Type.Lara].Meshes).Values.SelectMany(v => v);
-        //        Directory.CreateDirectory("ngage");
-        //        Directory.CreateDirectory("ngage/caves");
-        //        int i = 0;
-        //        foreach (var r in segs)
-        //        {
-        //            r.Image.Save("ngage/caves/" + i + ".png");
-        //            i++;
-        //        }
-        //    }
-        //    {
-        //        var packer = new TR2TexturePacker(ngage);
-        //        var segs = packer.GetMeshRegions(ngage.Models[TR2Type.LaraSnowmobAnim_H].Meshes).Values.SelectMany(v => v);
-        //        Directory.CreateDirectory("ngage/ng");
-        //        int i = 0;
-        //        foreach (var r in segs)
-        //        {
-        //            r.Image.Save("ngage/ng/" + i + ".png");
-        //            i++;
-        //        }
-        //    }
-
-        //    return;
-        //}
 
         if (false)
         {
@@ -5559,6 +6022,42 @@ class Program
                 map.Add([.. baseModel1.Meshes.GetRange(baseModel1.Meshes.Count - 15, 15)]);
             }
 
+            {
+                // 26. TR4 young Lara
+                var angkor = ReadTR4(@"F:\tomp\all levels\tr4\angkor1.tr4");
+                // backpack by default
+                angkor.Models[TR4Type.LaraSkin].Meshes[7] = angkor.Models[TR4Type.Actor1SpeechHead1].Meshes[7];
+                Import(baseLevel, baseModel2, angkor, angkor.Models[TR4Type.LaraSkin], null);
+                map.Add([.. baseModel2.Meshes.GetRange(baseModel2.Meshes.Count - 15, 15)]);
+            }
+
+            {
+                // 27. TR4 young golden Lara
+                int j = baseModel2.Meshes.Count - 15;
+                for (int i = 0; i < 15; i++)
+                {
+                    baseModel2.Meshes.Add(baseModel2.Meshes[j++].Clone());
+                }
+                map.Add([.. baseModel2.Meshes.GetRange(baseModel2.Meshes.Count - 15, 15)]);
+            }
+
+            {
+                // 28. TR4 classic Lara
+                var seth = ReadTR4(@"F:\tomp\all levels\tr4\settomb1.tr4");
+                Import(baseLevel, baseModel2, seth, seth.Models[TR4Type.LaraSkin], null);
+                map.Add([.. baseModel2.Meshes.GetRange(baseModel2.Meshes.Count - 15, 15)]);
+            }
+
+            {
+                // 29. TR4 golden Lara
+                int j = baseModel2.Meshes.Count - 15;
+                for (int i = 0; i < 15; i++)
+                {
+                    baseModel2.Meshes.Add(baseModel2.Meshes[j++].Clone());
+                }
+                map.Add([.. baseModel2.Meshes.GetRange(baseModel2.Meshes.Count - 15, 15)]);
+            }
+
             if (true)
             {
                 // Mesh cleanup
@@ -5696,7 +6195,7 @@ class Program
                 }
 
                 {
-                    // Gold bacon, TR2/3 gold, gold Sophia
+                    // Gold bacon, TR2/3 gold, gold Sophia, gold young, gold TR4
                     var goldTex = map[_laraGold1][0].TexturedRectangles[0].Texture;
                     foreach (var mesh in map[_laraGold2])
                     {
@@ -5710,6 +6209,70 @@ class Program
                     {
                         mesh.TexturedFaces.ToList().ForEach(f => f.Texture = goldTex);
                     }
+                    foreach (var mesh in map[_laraYoungGold])
+                    {
+                        mesh.TexturedFaces.ToList().ForEach(f => f.Texture = goldTex);
+                    }
+                    foreach (var mesh in map[_laraGold4])
+                    {
+                        mesh.TexturedFaces.ToList().ForEach(f => f.Texture = goldTex);
+                    }
+                }
+
+                {
+                    // Plug TR4 braid gaps for when config option is off
+                    PlugTR4Head(map[_laraClassic4][14], false);
+                    PlugTR4Head(map[_laraGold4][14], false);
+                    PlugTR4Head(map[_laraYoung][14], true);
+                    PlugTR4Head(map[_laraYoungGold][14], true);
+                }
+
+                {
+                    // Bad triangle on young hips
+                    var mesh = map[_laraYoung][0];
+                    var vts = new ushort[] { 22,7,6 };
+                    var f = mesh.TexturedTriangles.Find(g => g.Vertices.All(vts.Contains));
+                    vts = [15,23,11];
+                    var f2 = mesh.TexturedTriangles.Find(g => g.Vertices.All(vts.Contains));
+
+                    var tex = baseLevel.ObjectTextures[f.Texture].Clone();
+                    tex.UVMode = TRUVMode.NE_AntiClockwise;
+                    f2.Texture = (ushort)baseLevel.ObjectTextures.Count;
+                    baseLevel.ObjectTextures.Add(tex);
+                    f2.Rotate(2);
+                }
+
+                {
+                    void DumpImg(ushort id)
+                    {
+                        var tex = baseLevel.ObjectTextures[id];
+                        var img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                        Directory.CreateDirectory("Young/Fixed");
+                        var file = $"Young/Fixed/{id}.png";
+                        if (File.Exists(file))
+                        {
+                            var seg = new TRImage(file);
+                            img.Import(seg, tex.Position);
+                            baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
+                        }
+                        else
+                        {
+                            var seg = img.Export(tex.Bounds);
+                            seg.Save($"Young/{id}.png");
+                        }
+                    }
+
+                    // Fix young backback
+                    var mesh = map[_laraYoung][7];
+                    var vts = new ushort[] { 31,51,54 };
+                    var f = mesh.TexturedTriangles.Find(g => g.Vertices.All(vts.Contains));
+                    DumpImg(f.Texture);
+                    vts = [45,49,34,53];
+                    f = mesh.TexturedRectangles.Find(g => g.Vertices.All(vts.Contains));
+                    DumpImg(f.Texture);
+                    vts = [49,34,58];
+                    f = mesh.TexturedTriangles.Find(g => g.Vertices.All(vts.Contains));
+                    DumpImg(f.Texture);
                 }
 
                 {
@@ -6049,6 +6612,17 @@ class Program
                     }
                     CleanupVertices(map[_laraBomberAlpha][7]);
                 }
+
+                {
+                    // Young left hand
+                    foreach (var id in new[] { _laraYoung, _laraYoungGold })
+                    {
+                        var mesh = map[id][13];
+                        var face = mesh.TexturedTriangles.First().Clone();
+                        mesh.TexturedTriangles.Add(face);
+                        face.Vertices = [7, 3, 4];
+                    }
+                }
             }
 
             {
@@ -6115,6 +6689,7 @@ class Program
             DoGuns(baseLevel);
             SortGuns(baseLevel);
             DoLegs(baseLevel);
+            DoJoints(baseLevel);
             //DoHolsters(baseLevel);
             FixTR1PistolTransparency(baseLevel);
             FixTR2Bomber(baseLevel, baseModel1.Meshes.GetRange(10 * 15 + 1, 15), baseModel2.Meshes.GetRange(136, 15));
@@ -6124,326 +6699,5 @@ class Program
             _reader2.Write(baseLevel, "outfits.tr2");
             return;
         }
-
-        if (args.Length == 0 || args[0].Contains('?'))
-        {
-            Usage();
-            return;
-        }
-
-        Mode mode = Mode.Png;
-        if (args.Length > 1)
-        {
-            string arg = args[1].ToLower();
-            if (arg == "html")
-            {
-                mode = Mode.Html;
-            }
-            else if (arg == "segments")
-            {
-                mode = Mode.Segments;
-            }
-            else if (arg == "faces")
-            {
-                mode = Mode.Faces;
-                if (args.Length < 3)
-                {
-                    return;
-                }
-            }
-            else if (arg == "boxes")
-            {
-                mode = Mode.Boxes;
-                if (args.Length < 3)
-                {
-                    return;
-                }
-            }
-            else if (arg == "depend")
-            {
-                mode = Mode.Dependencies;
-            }
-            else if (arg == "dds")
-            {
-                if (args.Length < 3)
-                {
-                    return;
-                }
-                mode = Mode.Dds;
-            }
-            else if (arg == "texinfo")
-            {
-                mode = Mode.TexInfo;
-            }
-        }
-
-        string levelType = args[0].ToLower();
-
-        if (mode == Mode.Dds)
-        {
-            if (Enum.TryParse(levelType.ToUpper(), out TRGameVersion version))
-            {
-                TRRExporter.Export(args[2], version);
-            }
-        }
-        else if (mode == Mode.TexInfo)
-        {
-            if (Enum.TryParse(levelType.ToUpper(), out TRGameVersion version))
-            {
-                TRRExporter.GenerateCategories(version);
-            }
-        }
-        else if (levelType.EndsWith(".phd"))
-        {
-            ExportAllTextures(args[0], _reader1.Read(args[0]), mode, args);
-        }
-        else if (levelType.EndsWith(".tr2"))
-        {
-            TRFileVersion version = DetectVersion(args[0]);
-            if (version == TRFileVersion.TR2)
-            {
-                ExportAllTextures(args[0], _reader2.Read(args[0]), mode, args);
-            }
-            else if (version == TRFileVersion.TR3a || version == TRFileVersion.TR3b)
-            {
-                ExportAllTextures(args[0], _reader3.Read(args[0]), mode, args);
-            }
-        }
-        else if (levelType == "tr1")
-        {
-            foreach (string lvl in TR1LevelNames.AsOrderedList)
-            {
-                if (File.Exists(lvl))
-                {
-                    ExportAllTextures(lvl, _reader1.Read(lvl), mode, args);
-                }
-            }
-        }
-        else if (levelType == "tr1g")
-        {
-            foreach (string lvl in TR1LevelNames.AsListGold)
-            {
-                if (File.Exists(lvl))
-                {
-                    ExportAllTextures(lvl, _reader1.Read(lvl), mode, args);
-                }
-            }
-        }
-        else if (levelType == "tr2g")
-        {
-            foreach (string lvl in TR2LevelNames.AsListGold)
-            {
-                if (File.Exists(lvl))
-                {
-                    ExportAllTextures(lvl, _reader2.Read(lvl), mode, args);
-                }
-            }
-        }
-        else if (levelType == "tr3")
-        {
-            foreach (string lvl in TR3LevelNames.AsOrderedList)
-            {
-                if (File.Exists(lvl))
-                {
-                    ExportAllTextures(lvl, _reader3.Read(lvl), mode, args);
-                }
-            }
-        }
-        else if (levelType == "tr3g")
-        {
-            foreach (string lvl in TR3LevelNames.AsListGold)
-            {
-                if (File.Exists(lvl))
-                {
-                    ExportAllTextures(lvl, _reader3.Read(lvl), mode, args);
-                }
-            }
-        }
-        else
-        {
-            foreach (string lvl in TR2LevelNames.AsOrderedList)
-            {
-                if (File.Exists(lvl))
-                {
-                    ExportAllTextures(lvl, _reader2.Read(lvl), mode, args);
-                }
-            }
-        }
-    }
-
-    static TRFileVersion DetectVersion(string path)
-    {
-        using BinaryReader reader = new(File.Open(path, FileMode.Open));
-        return (TRFileVersion)reader.ReadUInt32();
-    }
-
-    static void ExportAllTextures(string lvl, TR1Level inst, Mode mode, string[] args)
-    {
-        switch (mode)
-        {
-            case Mode.Png:
-                PngExporter.Export(inst, lvl);
-                break;
-            case Mode.Html:
-                HtmlExporter.Export(inst, lvl);
-                break;
-            case Mode.Faces:
-                FaceMapper.DrawFaces(inst, lvl, GetRoomArgs(args[2], inst.Rooms.Count), args.Length > 3);
-                break;
-            case Mode.Dependencies:
-                DependencyExporter.Export(inst, lvl);
-                break;
-            default:
-                Console.WriteLine("{0} mode is not supported for TR1.", mode);
-                break;
-        }
-    }
-
-    static void ExportAllTextures(string lvl, TR2Level inst, Mode mode, string[] args)
-    {
-        switch (mode)
-        {
-            case Mode.Png:
-                PngExporter.Export(inst, lvl);
-                break;
-            case Mode.Html:
-                HtmlExporter.Export(inst, lvl);
-                break;
-            case Mode.Segments:
-                SegmentExporter.Export(inst, lvl);
-                break;
-            case Mode.Faces:
-                FaceMapper.DrawFaces(inst, lvl, GetRoomArgs(args[2], inst.Rooms.Count), args.Length > 3);
-                break;
-            case Mode.Boxes:
-                FaceMapper.DrawBoxes(inst, lvl, GetRoomArgs(args[2], inst.Rooms.Count));
-                break;
-            case Mode.Dependencies:
-                DependencyExporter.Export(inst, lvl);
-                break;
-            default:
-                Console.WriteLine("{0} mode is not supported for TR2.", mode);
-                break;
-        }
-    }
-
-    static void ExportAllTextures(string lvl, TR3Level inst, Mode mode, string[] args)
-    {
-        switch (mode)
-        {
-            case Mode.Png:
-                PngExporter.Export(inst, lvl);
-                break;
-            case Mode.Html:
-                HtmlExporter.Export(inst, lvl);
-                break;
-            case Mode.Segments:
-                SegmentExporter.Export(inst, lvl);
-                break;
-            case Mode.Faces:
-                FaceMapper.DrawFaces(inst, lvl, GetRoomArgs(args[2], inst.Rooms.Count), args.Length > 3);
-                break;
-            case Mode.Dependencies:
-                DependencyExporter.Export(inst, lvl);
-                break;
-            default:
-                Console.WriteLine("{0} mode is not supported for TR3.", mode);
-                break;
-        }
-    }
-
-    static IEnumerable<int> GetRoomArgs(string arg, int fallbackCount)
-    {
-        if (string.Equals(arg, "all", StringComparison.CurrentCultureIgnoreCase))
-        {
-            return Enumerable.Range(0, fallbackCount);
-        }
-        return arg.Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(i => i.Trim())
-            .Where(i => int.TryParse(i, out int _))
-            .Select(i => int.Parse(i));
-    }
-
-    static void Usage()
-    {
-        Console.WriteLine();
-        Console.WriteLine("Usage: TextureExport [tr1 | tr1g | tr2 | tr2g | tr3 | tr3g | *.phd | *.tr2] [png | html | segments | faces | boxes | depend | dds | texinfo]");
-        Console.WriteLine();
-
-        Console.WriteLine("Target Levels");
-        Console.WriteLine("\ttr1      - The original TR1 levels.");
-        Console.WriteLine("\ttr1g     - The TR1 Unfinished Business levels.");
-        Console.WriteLine("\ttr2      - The original TR2 levels. Default option.");
-        Console.WriteLine("\ttr2g     - The TR2 Golden Mask levels.");
-        Console.WriteLine("\ttr3      - The original TR3 levels.");
-        Console.WriteLine("\ttr3g     - The TR3 Lost Artefact levels.");
-        Console.WriteLine("\t*.phd    - Use a specific TR1 level file.");
-        Console.WriteLine("\t*.tr2    - Use a specific TR2/TR3 level file.");
-        Console.WriteLine();
-
-        Console.WriteLine("Export Mode");
-        Console.WriteLine("\tpng      - Export each texture tile to PNG. Default Option.");
-        Console.WriteLine("\thtml     - Export all tiles to a single HTML document.");
-        Console.WriteLine("\tsegments - Export each object and sprite texture to individual PNG files.");
-        Console.WriteLine("\tfaces    - Create a new texture for every face in a room and mark its index. ALL can be used in place of room number list. Add additional arg to use black background.");
-        Console.WriteLine("\tboxes    - Similar to faces, but mark box extents for a list of rooms.");
-        Console.WriteLine("\tdepend   - Calculate which textures are shared between models and generate the JSON used in the main randomizer.");
-        Console.WriteLine("\tdds      - Convert DDS files to PNG.");
-        Console.WriteLine("\ttexinfo  - Generate TexInfo JSON files for texture randomization.");
-        Console.WriteLine();
-        
-        Console.WriteLine("Examples");
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("\tTextureExport");
-        Console.ResetColor();
-        Console.WriteLine("\t\tExport all TR2 level tiles to PNG.");
-        Console.WriteLine();
-
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("\tTextureExport tr2 html");
-        Console.ResetColor();
-        Console.WriteLine("\t\tExport all TR2 level tiles to HTML.");
-        Console.WriteLine();
-
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("\tTextureExport tr2g html");
-        Console.ResetColor();
-        Console.WriteLine("\t\tExport all Golden Mask level tiles to HTML.");
-        Console.WriteLine();
-
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("\tTextureExport BOAT.TR2");
-        Console.ResetColor();
-        Console.WriteLine("\t\tExport the Venice level tiles to PNG.");
-        Console.WriteLine();
-
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("\tTextureExport FLOATING.TR2 segments");
-        Console.ResetColor();
-        Console.WriteLine("\t\tExport all object and sprite textures from Floating Islands to individual PNGs.");
-        Console.WriteLine("\t\tA sub-directory will be created using the level name to store the files.");
-        Console.WriteLine();
-
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("\tTextureExport WALL.TR2 faces 4,32");
-        Console.ResetColor();
-        Console.WriteLine("\t\tCreates a new texture for every face in rooms 4 and 32 and marks its index on the texture.");
-        Console.WriteLine("\t\tThe level will likely be unplayable due to limits but can be viewed in trview.");
-        Console.WriteLine();
-
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("\tTextureExport WALL.TR2 boxes 4,32");
-        Console.ResetColor();
-        Console.WriteLine("\t\tCreates a new texture for sectors in rooms 4 and 32, showing the box index for the sector.");
-        Console.WriteLine("\t\tThe level will likely be unplayable due to limits but can be viewed in trview.");
-        Console.WriteLine();
-
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("\tTextureExport TR3 depend");
-        Console.ResetColor();
-        Console.WriteLine("\t\tCycle through each TR3 level and work out which textures are shared between models.");
-        Console.WriteLine("\t\tJSON files are generated for referencing in the main randomizer. This process will");
-        Console.WriteLine("\t\tbe lengthy.");
-        Console.WriteLine();
     }
 }
