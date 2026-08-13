@@ -160,13 +160,13 @@ public static class GunExtras
 
     public static TR2Level BaseTR1Guns()
     {
-        var level = Program.MakeBaseLevel();
+        var level = Legacy.MakeBaseLevel();
 
 
         TRMesh hips;
         {
-            var model = Program.MakeBaseModel();
-            var caves = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            var model = Legacy.MakeBaseModel();
+            var caves = Legacy._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
             var shotgunAnim = caves.Models[TR1Type.LaraShotgunAnim_H];
             caves.Palette[255] = new();
             hips = shotgunAnim.Meshes[0];
@@ -178,13 +178,13 @@ public static class GunExtras
 
             shotgunAnim.Meshes = [hips];
 
-            Program.Import(level, model, caves, shotgunAnim, null);
+            Legacy.Import(level, model, caves, shotgunAnim, null);
 
             model.Meshes.RemoveAt(0);
             for (int i = 0; i < 14; i++)
                 model.Meshes.Insert(0, model.Meshes[0]);
 
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             model.Animations = wall.Models[TR2Type.LaraShotgunAnim_H].Animations;
             // Fix using holster SFX on draw
             (model.Animations[1].Commands[0] as TRSFXCommand).SoundID = (short)TR1SFX.LaraDraw;
@@ -198,11 +198,11 @@ public static class GunExtras
         }
 
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[TR2Type.LaraFlareAnim_H];
             flares.Meshes = [flares.Meshes[13]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips.Clone())];
             model.Animations = flares.Animations;
@@ -216,11 +216,11 @@ public static class GunExtras
             TR2Type.LaraAutoAnim_H, TR2Type.LaraM16Anim_H, TR2Type.LaraHarpoonAnim_H, TR2Type.LaraGrenadeAnim_H,
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
             flares.Meshes = [flares.Meshes[14]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
@@ -248,10 +248,10 @@ public static class GunExtras
             TR2Type.AutoAmmo_M_H, TR2Type.Autos_M_H,
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -272,19 +272,19 @@ public static class GunExtras
             TR2Type.AutoAmmo_S_P
         })
         {
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
-            Program.ImportSprite(level, wall, type, (TR2Type)_map2[type]);
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            Legacy.ImportSprite(level, wall, type, (TR2Type)_map2[type]);
         }
 
         foreach (var type in new[] {
             TR3Type.LaraDeagleAnimation_H, TR3Type.LaraMP5Animation_H, TR3Type.LaraRocketAnimation_H,
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
             var flares = wall.Models[type];
             flares.Meshes = [flares.Meshes[14]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
@@ -308,10 +308,10 @@ public static class GunExtras
             TR3Type.RocketLauncher_M_H, TR3Type.Rockets_M_H, TR3Type.RocketSingle,
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -346,7 +346,7 @@ public static class GunExtras
         }
 
         {
-            var wall = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            var wall = Legacy._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
             CreateModelLevel(wall, TR1Type.Pistols_M_H);
 
             var img = new TRImage(wall.Images8[0].Pixels, wall.Palette);
@@ -385,8 +385,8 @@ public static class GunExtras
     public static void MakeTR1Guns()
     {
         var level = BaseTR1Guns();
-        Program.Repack(level);
-        Program._reader2.Write(level, "tr1guns.tr2");
+        Legacy.Repack(level, true, true);
+        Legacy._reader2.Write(level, "tr1guns.tr2");
     }
 
     static void CreateModelLevel(TR1Level level, params TR1Type[] types)
@@ -444,12 +444,12 @@ public static class GunExtras
 
         foreach (var type in new[] { TR1Type.Lara, TR1Type.LaraPistolAnim_H, TR1Type.LaraMagnumAnim_H, TR1Type.LaraUziAnimation_H, TR1Type.Gunflare_H })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
             var flares = wall.Models[type];
             if (type != TR1Type.Gunflare_H)
                 flares.Meshes = [flares.Meshes[14]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
 
@@ -478,12 +478,12 @@ public static class GunExtras
         }
 
         {
-            var wall = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
-            Program.ImportSprite(level, wall, TR1Type.Ricochet_S_H, (TR2Type)(int)TR1Type.Ricochet_S_H);
+            var wall = Legacy._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            Legacy.ImportSprite(level, wall, TR1Type.Ricochet_S_H, (TR2Type)(int)TR1Type.Ricochet_S_H);
         }
 
-        Program.Repack(level);
-        Program._reader2.Write(level, "tr1gymguns.tr2");
+        Legacy.Repack(level, true, true);
+        Legacy._reader2.Write(level, "tr1gymguns.tr2");
     }
 
     static readonly Dictionary<TR1Type, int> _map21 = new()
@@ -517,12 +517,12 @@ public static class GunExtras
 
     public static TR2Level BaseTR2Guns()
     {
-        var level = Program.MakeBaseLevel();
+        var level = Legacy.MakeBaseLevel();
 
         TRMesh hips;
         {
-            var model = Program.MakeBaseModel();
-            var caves = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            var model = Legacy.MakeBaseModel();
+            var caves = Legacy._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
             var magnumAnim = caves.Models[TR1Type.LaraMagnumAnim_H];
             caves.Palette[255] = new();
             hips = magnumAnim.Meshes[0];
@@ -534,7 +534,7 @@ public static class GunExtras
 
             magnumAnim.Meshes = [hips];
 
-            Program.Import(level, model, caves, magnumAnim, null);
+            Legacy.Import(level, model, caves, magnumAnim, null);
 
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
             model.Meshes[1] = model.Meshes[1].Clone();
@@ -552,10 +552,10 @@ public static class GunExtras
             TR1Type.Magnums_M_H, TR1Type.MagnumAmmo_M_H,
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -574,19 +574,19 @@ public static class GunExtras
             TR1Type.MagnumAmmo_S_P,
         })
         {
-            var wall = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
-            Program.ImportSprite(level, wall, type, (TR2Type)_map21[type]);
+            var wall = Legacy._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            Legacy.ImportSprite(level, wall, type, (TR2Type)_map21[type]);
         }
 
         foreach (var type in new[] {
             TR3Type.LaraDeagleAnimation_H, TR3Type.LaraMP5Animation_H, TR3Type.LaraRocketAnimation_H,
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
             var flares = wall.Models[type];
             flares.Meshes = [flares.Meshes[14]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
@@ -610,10 +610,10 @@ public static class GunExtras
             TR3Type.RocketLauncher_M_H, TR3Type.Rockets_M_H, TR3Type.RocketSingle,
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -653,8 +653,8 @@ public static class GunExtras
     public static void MakeTR2Guns()
     {
         var level = BaseTR2Guns();
-        Program.Repack(level);
-        Program._reader2.Write(level, "tr2guns.tr2");
+        Legacy.Repack(level, true, true);
+        Legacy._reader2.Write(level, "tr2guns.tr2");
     }
 
     public static void MakeTR2GymGuns()
@@ -665,12 +665,12 @@ public static class GunExtras
 
         foreach (var type in new[] { TR2Type.LaraPistolAnim_H, TR2Type.LaraShotgunAnim_H, TR2Type.LaraAutoAnim_H, TR2Type.LaraUziAnim_H, TR2Type.LaraM16Anim_H, TR2Type.LaraGrenadeAnim_H, TR2Type.LaraHarpoonAnim_H})
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
             
             flares.Meshes = [flares.Meshes[14]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
 
@@ -702,10 +702,10 @@ public static class GunExtras
 
         foreach (var type in new[] { TR2Type.Pistols_M_H, TR2Type.Shotgun_M_H, TR2Type.Autos_M_H, TR2Type.Uzi_M_H, TR2Type.Harpoon_M_H, TR2Type.M16_M_H, TR2Type.GrenadeLauncher_M_H, TR2Type.Gunflare_H, TR2Type.M16Gunflare_H })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -716,8 +716,8 @@ public static class GunExtras
 
         level.Sprites.Clear();
 
-        Program.Repack(level);
-        Program._reader2.Write(level, "tr2gymguns.tr2");
+        Legacy.Repack(level, true, true);
+        Legacy._reader2.Write(level, "tr2gymguns.tr2");
     }
 
     public static void MakeTR2HSHGuns()
@@ -728,12 +728,12 @@ public static class GunExtras
 
         foreach (var type in new[] { TR2Type.LaraPistolAnim_H, TR2Type.LaraAutoAnim_H, TR2Type.LaraUziAnim_H, TR2Type.LaraM16Anim_H, TR2Type.LaraGrenadeAnim_H, TR2Type.LaraHarpoonAnim_H })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
 
             flares.Meshes = [flares.Meshes[14]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
 
@@ -765,10 +765,10 @@ public static class GunExtras
 
         foreach (var type in new[] { TR2Type.Pistols_M_H, TR2Type.Autos_M_H, TR2Type.Uzi_M_H, TR2Type.Harpoon_M_H, TR2Type.M16_M_H, TR2Type.GrenadeLauncher_M_H, TR2Type.M16Gunflare_H, TR2Type.GrenadeProjectile_H, TR2Type.HarpoonProjectile_H })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -779,12 +779,12 @@ public static class GunExtras
 
         level.Sprites.Clear();
         {
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
-            Program.ImportSprite(level, wall, TR2Type.Pistols_S_P, TR2Type.Pistols_S_P);
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            Legacy.ImportSprite(level, wall, TR2Type.Pistols_S_P, TR2Type.Pistols_S_P);
         }
 
-        Program.Repack(level);
-        Program._reader2.Write(level, "tr2hshguns.tr2");
+        Legacy.Repack(level, true, true);
+        Legacy._reader2.Write(level, "tr2hshguns.tr2");
     }
 
     public static void MakeTR2VegasGuns()
@@ -795,12 +795,12 @@ public static class GunExtras
 
         foreach (var type in new[] { TR2Type.LaraM16Anim_H, TR2Type.LaraGrenadeAnim_H, TR2Type.LaraHarpoonAnim_H })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
 
             flares.Meshes = [flares.Meshes[14]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
 
@@ -832,10 +832,10 @@ public static class GunExtras
 
         foreach (var type in new[] { TR2Type.Harpoon_M_H, TR2Type.M16_M_H, TR2Type.GrenadeLauncher_M_H, TR2Type.Gunflare_H, TR2Type.M16Gunflare_H, TR2Type.GrenadeProjectile_H, TR2Type.HarpoonProjectile_H })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -846,8 +846,8 @@ public static class GunExtras
 
         level.Sprites.Clear();
 
-        Program.Repack(level);
-        Program._reader2.Write(level, "tr2vegasguns.tr2");
+        Legacy.Repack(level, true, true);
+        Legacy._reader2.Write(level, "tr2vegasguns.tr2");
     }
 
     static readonly Dictionary<TR1Type, int> _map31 = new()
@@ -869,12 +869,12 @@ public static class GunExtras
 
     public static TR2Level BaseTR3Guns()
     {
-        var level = Program.MakeBaseLevel();
+        var level = Legacy.MakeBaseLevel();
 
         TRMesh hips;
         {
-            var model = Program.MakeBaseModel();
-            var caves = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            var model = Legacy.MakeBaseModel();
+            var caves = Legacy._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
             var magnumAnim = caves.Models[TR1Type.LaraMagnumAnim_H];
             caves.Palette[255] = new();
             hips = magnumAnim.Meshes[0];
@@ -886,7 +886,7 @@ public static class GunExtras
 
             magnumAnim.Meshes = [hips];
 
-            Program.Import(level, model, caves, magnumAnim, null);
+            Legacy.Import(level, model, caves, magnumAnim, null);
 
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
             model.Meshes[1] = model.Meshes[1].Clone();
@@ -904,10 +904,10 @@ public static class GunExtras
             TR1Type.Magnums_M_H, TR1Type.MagnumAmmo_M_H,
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader1.Read(@"F:\tomp\all levels\tr1\level1.phd");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -925,11 +925,11 @@ public static class GunExtras
             TR2Type.LaraAutoAnim_H, TR2Type.LaraM16Anim_H
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
             flares.Meshes = [flares.Meshes[14]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Meshes = [.. Enumerable.Repeat(0, 15).Select(i => hips)];
@@ -952,10 +952,10 @@ public static class GunExtras
             TR2Type.Autos_M_H, TR2Type.AutoAmmo_M_H, TR2Type.M16_M_H, TR2Type.M16Ammo_M_H,
         })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader2.Read(@"F:\tomp\all levels\tr2\wall.tr2");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -970,8 +970,8 @@ public static class GunExtras
     public static void MakeTR3Guns()
     {
         var level = BaseTR3Guns();
-        Program.Repack(level);
-        Program._reader2.Write(level, "tr3guns.tr2");
+        Legacy.Repack(level, true, true);
+        Legacy._reader2.Write(level, "tr3guns.tr2");
     }
 
     public static void MakeTR3GymGuns()
@@ -982,12 +982,12 @@ public static class GunExtras
 
         foreach (var type in new[] { TR3Type.LaraShotgunAnimation_H, TR3Type.LaraDeagleAnimation_H, TR3Type.LaraUziAnimation_H, TR3Type.LaraMP5Animation_H, TR3Type.LaraRocketAnimation_H, TR3Type.LaraGrenadeAnimation_H, TR3Type.LaraHarpoonAnimation_H })
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
             var flares = wall.Models[type];
 
             flares.Meshes = [flares.Meshes[14]];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
 
@@ -1022,10 +1022,10 @@ public static class GunExtras
             TR3Type.Harpoons_M_H, TR3Type.MP5Ammo_M_H, TR3Type.Rockets_M_H, TR3Type.Grenades_M_H, TR3Type.GunflareMP5_H, TR3Type.RocketSingle,
             TR3Type.HarpoonSingle2, TR3Type.GrenadeSingle, TR3Type.RedShellCasing_H})
         {
-            var model = Program.MakeBaseModel();
-            var wall = Program._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
+            var model = Legacy.MakeBaseModel();
+            var wall = Legacy._reader3.Read(@"F:\tomp\all levels\tr3\jungle.tr2");
             var flares = wall.Models[type];
-            Program.Import(level, model, wall, flares, null);
+            Legacy.Import(level, model, wall, flares, null);
 
             model.Meshes.RemoveAt(0);
             model.Animations = flares.Animations;
@@ -1036,7 +1036,7 @@ public static class GunExtras
 
         level.Sprites.Clear();
 
-        Program.Repack(level);
-        Program._reader2.Write(level, "tr3gymguns.tr2");
+        Legacy.Repack(level, true, true);
+        Legacy._reader2.Write(level, "tr3gymguns.tr2");
     }
 }
