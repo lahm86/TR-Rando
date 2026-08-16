@@ -375,12 +375,10 @@ public class Legacy
         return baseLevel;
     }
 
-    public static void Repack(TR2Level level, bool dedupe, bool pad)
+    public static void Repack(TR2Level level, bool pad)
     {
         var packer = new TR2TexturePacker(level);
         var regions = packer.GetMeshRegions(level.DistinctMeshes);
-        if (dedupe)
-            new TRImageDeduplicator().Deduplicate(regions);
 
         var rects = regions.SelectMany(v => v.Value).ToList();
         if (pad)
@@ -433,6 +431,8 @@ public class Legacy
                 var seg = rect.Segments[0].Texture as TRObjectTexture;
                 seg.Size = new(seg.Size.Width - 2, seg.Size.Height - 2);
                 rect.MoveTo(new(seg.Position.X + 1, seg.Position.Y + 1));
+                Debug.Assert(seg.Position.X + seg.Size.Width < 256);
+                Debug.Assert(seg.Position.Y + seg.Size.Height < 256);
             }
         }
 
@@ -446,34 +446,6 @@ public class Legacy
             });
 
         level.Sprites = sprites;
-
-        // Final texinfo dedupe
-        static object TexInfoKey(TRObjectTexture t) => new
-        {
-            t.Bounds,
-            t.Atlas,
-            t.HasTriangleVertex,
-            t.UVMode,
-            t.BlendingMode,
-        };
-
-        var indexedTextures = level.ObjectTextures
-            .Select((tex, index) => (tex, index));
-        var groups = indexedTextures
-            .GroupBy(x => TexInfoKey(x.tex))
-            .ToList();
-
-        var remap = groups
-            .SelectMany((g, newIndex) =>
-                g.Select(x => (oldIndex: x.index, newIndex)))
-            .ToDictionary(x => (ushort)x.oldIndex, x => (ushort)x.newIndex);
-
-        level.ObjectTextures = [.. groups.Select(g => g.First().tex)];
-        level.DistinctMeshes
-            .SelectMany(m => m.TexturedFaces)
-            .Where(f => remap.ContainsKey(f.Texture))
-            .ToList()
-            .ForEach(f => f.Texture = remap[f.Texture]);
     }
 
     const uint _pop = 1;
@@ -3961,7 +3933,7 @@ public class Legacy
         // TR4
 
         {
-            var wall = _reader4.Read(@"F:\tomp\all levels\tr4\settomb1.tr4");
+            var wall = ReadTR4(@"F:\tomp\all levels\tr4\settomb1.tr4");
             var model = wall.Models[TR4Type.LaraFlareAnim];
             model.Meshes =
             [
@@ -4294,7 +4266,7 @@ public class Legacy
     static TR4Level ReadTR4(string lvl)
     {
         var level = _reader4.Read(lvl);
-        foreach (var obj in level.ObjectTextures.Where(obj => obj.HasTriangleVertex))
+        foreach (var obj in level.ObjectTextures.Where(obj => obj.HasTriangleVertex || obj.IsTriangle))
         {
             obj.Vertices[^1].U = 0;
             obj.Vertices[^1].V = 0;
@@ -4306,7 +4278,6 @@ public class Legacy
     {
         while (level.Images8.Count != level.Images16.Count)
             level.Images8.Add(level.Images8[^1]);
-        _reader2.Write(level, "fhfhf.tr2");
         SortGuns1(level);
         SortGuns2(level);
         SortGuns3(level);
@@ -5225,7 +5196,7 @@ public class Legacy
         };
         foreach (var (type, lvl) in map)
         {
-            var level = _reader4.Read($@"F:\tomp\all levels\tr4\{lvl}");
+            var level = ReadTR4($@"F:\tomp\all levels\tr4\{lvl}");
             var joints = level.Models[TR4Type.LaraSkinJoints];
             var model = new TRModel
             {
@@ -5645,7 +5616,7 @@ public class Legacy
         level.Models = models;
     }
 
-    public static TR2Level Run(bool dedupe, bool pad)
+    public static TR2Level Run(bool pad)
     {
         if (false)
         {
@@ -6823,7 +6794,7 @@ public class Legacy
             FixTR2Bomber(baseLevel, baseModel1.Meshes.GetRange(10 * 15 + 1, 15), baseModel2.Meshes.GetRange(136, 15));
             SplitModels(baseLevel);
 
-            Repack(baseLevel, dedupe, pad);
+            Repack(baseLevel, pad);
             _reader2.Write(baseLevel, "outfits_raw.tr2");
             return baseLevel;
         }

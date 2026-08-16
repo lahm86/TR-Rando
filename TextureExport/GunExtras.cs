@@ -385,7 +385,7 @@ public static class GunExtras
     public static void MakeTR1Guns()
     {
         var level = BaseTR1Guns();
-        Legacy.Repack(level, true, true);
+        Legacy.Repack(level, true);
         Legacy._reader2.Write(level, "tr1guns.tr2");
     }
 
@@ -482,7 +482,7 @@ public static class GunExtras
             Legacy.ImportSprite(level, wall, TR1Type.Ricochet_S_H, (TR2Type)(int)TR1Type.Ricochet_S_H);
         }
 
-        Legacy.Repack(level, true, true);
+        Legacy.Repack(level, true);
         Legacy._reader2.Write(level, "tr1gymguns.tr2");
     }
 
@@ -653,7 +653,7 @@ public static class GunExtras
     public static void MakeTR2Guns()
     {
         var level = BaseTR2Guns();
-        Legacy.Repack(level, true, true);
+        Legacy.Repack(level, true);
         Legacy._reader2.Write(level, "tr2guns.tr2");
     }
 
@@ -716,7 +716,7 @@ public static class GunExtras
 
         level.Sprites.Clear();
 
-        Legacy.Repack(level, true, true);
+        Legacy.Repack(level, true);
         Legacy._reader2.Write(level, "tr2gymguns.tr2");
     }
 
@@ -783,7 +783,7 @@ public static class GunExtras
             Legacy.ImportSprite(level, wall, TR2Type.Pistols_S_P, TR2Type.Pistols_S_P);
         }
 
-        Legacy.Repack(level, true, true);
+        Legacy.Repack(level, true);
         Legacy._reader2.Write(level, "tr2hshguns.tr2");
     }
 
@@ -846,7 +846,7 @@ public static class GunExtras
 
         level.Sprites.Clear();
 
-        Legacy.Repack(level, true, true);
+        Legacy.Repack(level, true);
         Legacy._reader2.Write(level, "tr2vegasguns.tr2");
     }
 
@@ -970,7 +970,7 @@ public static class GunExtras
     public static void MakeTR3Guns()
     {
         var level = BaseTR3Guns();
-        Legacy.Repack(level, true, true);
+        Legacy.Repack(level, true);
         Legacy._reader2.Write(level, "tr3guns.tr2");
     }
 
@@ -1036,7 +1036,7 @@ public static class GunExtras
 
         level.Sprites.Clear();
 
-        Legacy.Repack(level, true, true);
+        Legacy.Repack(level, true);
         Legacy._reader2.Write(level, "tr3gymguns.tr2");
     }
 }
