@@ -6087,16 +6087,42 @@ public class Legacy
                 {
                     for (int i = 0; i < 15; i++)
                     {
+                        if (lara != _laraVegas && (i == 7 || i == 14)) continue;
                         map[lara][i].CollRadius = map[_laraClassic2][i].CollRadius;
                         map[lara][i].Centre = map[_laraClassic2][i].Centre;
+                    }
+                    if (_laraDivingAlpha == lara)
+                    {
+                        for (int i = 0; i < 15; i++)
+                        {
+                            map[lara][i].CollRadius = map[_laraDiving][i].CollRadius;
+                            map[lara][i].Centre = map[_laraDiving][i].Centre;
+                        }
+                    }
+                    if (_laraBomberAlpha == lara)
+                    {
+                        for (int i = 0; i < 15; i++)
+                        {
+                            map[lara][i].CollRadius = map[_laraBomber][i].CollRadius;
+                            map[lara][i].Centre = map[_laraBomber][i].Centre;
+                        }
                     }
                 }
                 foreach (var lara in new[] { _laraGym3, _laraCoastal, _laraNevada, _laraLondon, _laraAntarc, _laraLeigh, _laraLeighGold, _laraAntarcBeta })
                 {
                     for (int i = 0; i < 15; i++)
                     {
+                        if (lara != _laraLeigh && (i == 7 || i == 14)) continue;
                         map[lara][i].CollRadius = map[_laraClassic3][i].CollRadius;
                         map[lara][i].Centre = map[_laraClassic3][i].Centre;
+                    }
+                    if (_laraAntarcBeta == lara)
+                    {
+                        for (int i = 0; i < 15; i++)
+                        {
+                            map[lara][i].CollRadius = map[_laraAntarc][i].CollRadius;
+                            map[lara][i].Centre = map[_laraAntarc][i].Centre;
+                        }
                     }
                 }
 
