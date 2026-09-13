@@ -2407,6 +2407,19 @@ public class Legacy
             Import(baseLevel, baseModel, seth, source, null);
             baseModel.MeshTrees.Add(new() { OffsetY = -330, OffsetZ = -23 + 3 * 160, Flags = _read });
             PlugTR4Head(baseModel.Meshes[^1], false);
+
+            // Fix her nose
+            var head = baseModel.Meshes[^1];
+            var uv = new ushort[] { 7, 8, 16 };
+            var f = head.TexturedTriangles.Find(r => r.Vertices.All(uv.Contains));
+            var tex = baseLevel.ObjectTextures[f.Texture];
+            var img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+            var seg = img.Export(tex.Bounds);
+            var a = seg.GetPixel(0, 0);
+            var b = seg.GetPixel(seg.Width - 1, 0);
+            seg.Write((c, x, y) => c == a ? b : c);
+            img.Import(seg, tex.Position);
+            baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
         }
 
         {
@@ -2433,6 +2446,51 @@ public class Legacy
                         baseModel.MeshTrees.Add(new() { OffsetZ = 160 });
                     }
                     PlugTR4Head(baseModel.Meshes[^1], lvl == TR4LevelNames.ANGKOR);
+
+                    if (lvl == TR4LevelNames.CITADEL)
+                    {
+                        // Fix her nose
+                        var head = baseModel.Meshes[^1];
+                        var uv = new ushort[] { 7, 8, 16 };
+                        var f = head.TexturedTriangles.Find(r => r.Vertices.All(uv.Contains));
+                        var tex = baseLevel.ObjectTextures[f.Texture];
+                        var img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                        var seg = img.Export(tex.Bounds);
+                        var a = seg.GetPixel(0, 0);
+                        var b = seg.GetPixel(seg.Width - 1, 0);
+                        seg.Write((c, x, y) => c == a ? b : c);
+                        img.Import(seg, tex.Position);
+                        baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
+                    }
+                    else
+                    {
+                        // Nose too
+                        var head = baseModel.Meshes[^1];
+                        var uv = new ushort[] { 5, 14, 6 };
+                        var f = head.TexturedTriangles.Find(r => r.Vertices.All(uv.Contains));
+                        var tex = baseLevel.ObjectTextures[f.Texture];
+                        var img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                        var seg = img.Export(tex.Bounds);
+                        var a = seg.GetPixel(0, 0);
+                        var b = seg.GetPixel(seg.Width - 1, 0);
+                        seg.Write((c, x, y) => c == a ? b : c);
+                        img.Import(seg, tex.Position);
+                        baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
+
+                        // Weird hair bit
+                        var vts = new ushort[]{22, 32, 62};
+                        f = head.TexturedTriangles.Find(g => g.Vertices.All(vts.Contains));
+                        tex = baseLevel.ObjectTextures[f.Texture];
+                        img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                        seg = img.Export(tex.Bounds);
+                        b = seg.GetPixel(0, 1);
+                        seg.Write((c, x, y) => c.G >= 46 && c.R < 100 ? b : c);
+                        b = seg.GetPixel(11, 1);
+                        var d = Color.FromArgb(103, 56, 29);
+                        seg.Write((c, x, y) => c == b ? d : c);
+                        img.Import(seg, tex.Position);
+                        baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
+                    }
                 }
                 x -= 160;
             }
@@ -6263,6 +6321,19 @@ public class Legacy
                     PlugTR4Head(map[_laraGold4][14], false);
                     PlugTR4Head(map[_laraYoung][14], true);
                     PlugTR4Head(map[_laraYoungGold][14], true);
+
+                    // Fix her nose
+                    var head = map[_laraClassic4][14];
+                    var uv = new ushort[] { 7,8,16 };
+                    var f = head.TexturedTriangles.Find(r => r.Vertices.All(uv.Contains));
+                    var tex = baseLevel.ObjectTextures[f.Texture];
+                    var img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                    var seg = img.Export(tex.Bounds);
+                    var a = seg.GetPixel(0, 0);
+                    var b = seg.GetPixel(seg.Width - 1, 0);
+                    seg.Write((c, x, y) => c == a ? b : c);
+                    img.Import(seg, tex.Position);
+                    baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
                 }
 
                 {
@@ -6278,6 +6349,33 @@ public class Legacy
                     f2.Texture = (ushort)baseLevel.ObjectTextures.Count;
                     baseLevel.ObjectTextures.Add(tex);
                     f2.Rotate(2);
+
+                    // Nose
+                    mesh = map[_laraYoung][14];
+                    var uv = new ushort[] { 5, 14, 6 };
+                    f = mesh.TexturedTriangles.Find(r => r.Vertices.All(uv.Contains));
+                    tex = baseLevel.ObjectTextures[f.Texture];
+                    var img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                    var seg = img.Export(tex.Bounds);
+                    var a = seg.GetPixel(0, 0);
+                    var b = seg.GetPixel(seg.Width - 1, 0);
+                    seg.Write((c, x, y) => c == a ? b : c);
+                    img.Import(seg, tex.Position);
+                    baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
+
+                    // Weird hair bit                    
+                    vts = [22,32,62];
+                    f = mesh.TexturedTriangles.Find(g => g.Vertices.All(vts.Contains));
+                    tex = baseLevel.ObjectTextures[f.Texture];
+                    img = new TRImage(baseLevel.Images16[tex.Atlas].Pixels);
+                    seg = img.Export(tex.Bounds);
+                    b = seg.GetPixel(0, 1);
+                    seg.Write((c, x, y) => c.G >= 46 &&  c.R < 100 ? b : c);
+                    b = seg.GetPixel(11, 1);
+                    var d = Color.FromArgb(103, 56, 29);
+                    seg.Write((c, x, y) => c == b ? d : c);
+                    img.Import(seg, tex.Position);
+                    baseLevel.Images16[tex.Atlas].Pixels = img.ToRGB555();
                 }
 
                 {
