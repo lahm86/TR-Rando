@@ -11,7 +11,7 @@ class Program
     private const int _skinStart = 302;
     private const int _skinMaxCount = 32;
     private const int _skinExtra = 334;
-    private const int _holsterMeshCount = 11;
+    private const int _holsterMeshCount = 12;
     private static readonly List<int> _gunMaps = [335, 336, 337, 339];
 
     public static void Main()
@@ -151,8 +151,7 @@ class Program
         foreach (var id in _gunMaps)
         {
             var model = level.Models[(TR2Type)id];
-
-            var trees = new[] { 23, 34, 45, 56, 65, 72 };
+            var trees = new[] { 25, 37, 49, 61, 71, 79 };
             foreach (var tree in trees)
                 model.MeshTrees[tree - 1].OffsetX += 286;
 

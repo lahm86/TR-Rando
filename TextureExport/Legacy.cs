@@ -5245,6 +5245,406 @@ public class Legacy
         baseModel.Meshes[66] = gunModel.Meshes[64].Clone(); // Flare
     }
 
+    static void DoTR4Guns(TR2Level level)
+    {
+        var baseModel = level.Models[_laraSkinGuns4];
+        foreach (var v in new[] { 62, 53, 42, 31, 20, 9 })
+        {
+            baseModel.MeshTrees[v + 1].Flags = _read;
+            baseModel.MeshTrees.Insert(v + 2, new() { OffsetZ = v == 62 ? 750 : 900, Flags = _pop });
+            baseModel.Meshes.Insert(v + 3, baseModel.Meshes[v].Clone());
+        }
+
+        {
+            baseModel.MeshTrees[76].Flags = _read;
+            baseModel.MeshTrees.Insert(77, new() { OffsetZ = 426, OffsetX = -148, Flags = _pop });
+            baseModel.Meshes.Insert(78, baseModel.Meshes[74].Clone());
+        }
+
+        {
+            baseModel.MeshTrees[83].Flags = _read;
+            baseModel.MeshTrees.Add(new() { OffsetZ = 768, Flags = _pop });
+            baseModel.Meshes.Add(baseModel.Meshes[81].Clone());
+        }
+
+        {
+            var seth = ReadTR4($@"F:\tomp\all levels\tr4\{TR4LevelNames.SETH}");
+            seth.Models[TR4Type.LaraShotgunAnim].Meshes =
+            [
+                seth.Models[TR4Type.LaraShotgunAnim].Meshes[10],
+                seth.Models[TR4Type.LaraShotgunAnim].Meshes[14],
+            ];
+            var tmpModel = MakeBaseModel();
+            Import(level, tmpModel, seth, seth.Models[TR4Type.LaraShotgunAnim], null);
+
+            baseModel.Meshes[71] = tmpModel.Meshes[1].Clone(); // Shotty hand
+            baseModel.Meshes[79] = tmpModel.Meshes[2].Clone(); // Shotty back
+
+            var hand = baseModel.Meshes[71];
+            var back = baseModel.Meshes[79];
+            DeleteHands(hand);
+            foreach (var v in new[] { 18, 19, 22, 23 })
+            {
+                hand.Vertices[v].Z += 26;
+                if (v == 19 || v == 23)
+                    hand.Vertices[v].Z += 1;
+            }
+
+            var vs = new ushort[] { 21, 17, 23, 20 };
+            var f1 = back.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            vs = [16, 17, 19, 21];
+            var f2 = back.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+
+            vs = [18, 22, 17, 21];
+            hand.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains))
+                .Texture = f2.Texture;
+            vs = [19, 23, 16, 20];
+            hand.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains))
+                .Texture = f2.Texture;
+
+            vs = [18, 17, 16, 19];
+            hand.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains))
+                .Texture = f1.Texture;
+            vs = [20, 21, 22, 23];
+            hand.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains))
+                .Texture = f1.Texture;
+
+            CleanupVertices(hand);
+
+            foreach (var v in back.Vertices)
+            {
+                v.Y -= 203;
+                v.X += 2;
+                v.Z -= 23;
+            }
+        }
+
+        {
+            var seth = ReadTR4($@"F:\tomp\all levels\tr4\{TR4LevelNames.SETH}");
+            seth.Models[TR4Type.LaraCrossbowAnim].Meshes =
+            [
+                seth.Models[TR4Type.LaraCrossbowAnim].Meshes[10],
+                seth.Models[TR4Type.LaraCrossbowAnim].Meshes[14],
+            ];
+            var tmpModel = MakeBaseModel();
+            Import(level, tmpModel, seth, seth.Models[TR4Type.LaraCrossbowAnim], null);
+
+            baseModel.Meshes[78] = tmpModel.Meshes[1].Clone(); // CB hand
+            baseModel.Meshes[85] = tmpModel.Meshes[2].Clone(); // CB back
+
+            var hand = baseModel.Meshes[78];
+            var back = baseModel.Meshes[85];
+            DeleteHands(hand);
+
+            var vs = new ushort[] { 28,34,25,31,60,61 };
+            hand.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+            hand.TexturedRectangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+
+            var dd = new Dictionary<ushort, ushort>
+            {
+                [64] = 25,
+                [63] = 31,
+                [62] = 34,
+                [65] = 28,
+            };
+            foreach (var f in hand.TexturedRectangles.Concat(hand.TexturedTriangles))
+            {
+                for (int i = 0; i < f.Vertices.Count; i++)
+                {
+                    if (dd.TryGetValue(f.Vertices[i], out var m))
+                        f.Vertices[i] = m;
+                }
+            }
+
+            vs = [17, 18, 23, 24];
+            var f1 = back.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            vs = [26, 32, 27, 33];
+            var f2 = hand.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            vs = [26,32,27,33, 28, 34, 25, 31];
+            hand.TexturedTriangles.RemoveAll(f => f != f2 && f.Vertices.All(vs.Contains));
+            hand.TexturedRectangles.RemoveAll(f => f != f2 && f.Vertices.All(vs.Contains));
+
+            foreach (var uv in new List<List<ushort>>
+            {
+                new(){ 31,34,33,32 },
+                new(){ 34,28,27,33 },
+                new(){ 28,25,26,27 },
+                new(){ 25,31,32,26 },
+            })
+            {
+                hand.TexturedRectangles.Add(new()
+                {
+                    Type = TRFaceType.Rectangle,
+                    Texture = f1.Texture,
+                    Vertices = uv,
+                });
+                hand.TexturedRectangles[^1].Rotate(1);
+            }
+
+            CleanupVertices(hand);
+
+            foreach (var v in back.Vertices)
+            {
+                v.Y -= 203;
+                v.X += 2;
+                v.Z -= 23;
+            }
+        }
+
+        {
+            var seth = ReadTR4($@"F:\tomp\all levels\tr4\{TR4LevelNames.SETH}");
+            seth.Models[TR4Type.LaraHolsters].Meshes =
+            [
+                seth.Models[TR4Type.LaraHolsters].Meshes[4],
+                seth.Models[TR4Type.LaraHolsters].Meshes[8],
+            ];
+            var tmpModel = MakeBaseModel();
+            Import(level, tmpModel, seth, seth.Models[TR4Type.LaraHolsters], null);
+
+            baseModel.Meshes[25] = tmpModel.Meshes[2].Clone();
+            baseModel.Meshes[26] = tmpModel.Meshes[1].Clone();
+        }
+
+        {
+            var seth = ReadTR4($@"F:\tomp\all levels\tr4\{TR4LevelNames.SETH}");
+            seth.Models[TR4Type.LaraHolstersPistols].Meshes =
+            [
+                seth.Models[TR4Type.LaraHolstersPistols].Meshes[4],
+                seth.Models[TR4Type.LaraHolstersPistols].Meshes[8],
+            ];
+            var tmpModel = MakeBaseModel();
+            Import(level, tmpModel, seth, seth.Models[TR4Type.LaraHolstersPistols], null);
+
+            baseModel.Meshes[27] = tmpModel.Meshes[2].Clone();
+            baseModel.Meshes[28] = tmpModel.Meshes[1].Clone();
+        }
+
+        {
+            var seth = ReadTR4($@"F:\tomp\all levels\tr4\{TR4LevelNames.SETH}");
+            seth.Models[TR4Type.LaraHolstersUzis].Meshes =
+            [
+                seth.Models[TR4Type.LaraHolstersUzis].Meshes[4],
+                seth.Models[TR4Type.LaraHolstersUzis].Meshes[8],
+            ];
+            var tmpModel = MakeBaseModel();
+            Import(level, tmpModel, seth, seth.Models[TR4Type.LaraHolstersUzis], null);
+
+            baseModel.Meshes[34] = tmpModel.Meshes[2].Clone();
+            baseModel.Meshes[35] = tmpModel.Meshes[1].Clone();
+        }
+
+        {
+            var seth = ReadTR4($@"F:\tomp\all levels\tr4\{TR4LevelNames.SETH}");
+            seth.Models[TR4Type.LaraHolstersSixshooter].Meshes =
+            [
+                seth.Models[TR4Type.LaraHolstersSixshooter].Meshes[8],
+            ];
+            var tmpModel = MakeBaseModel();
+            Import(level, tmpModel, seth, seth.Models[TR4Type.LaraHolstersSixshooter], null);
+
+            baseModel.Meshes[36] = tmpModel.Meshes[1].Clone();
+        }
+
+        {
+            var seth = ReadTR4($@"F:\tomp\all levels\tr4\{TR4LevelNames.SETH}");
+            seth.Models[TR4Type.LaraSixShooterAnim].Meshes =
+            [
+                seth.Models[TR4Type.LaraSixShooterAnim].Meshes[10],
+            ];
+            var tmpModel = MakeBaseModel();
+            Import(level, tmpModel, seth, seth.Models[TR4Type.LaraSixShooterAnim], null);
+
+            baseModel.Meshes[70] = tmpModel.Meshes[1].Clone();
+            var hand = baseModel.Meshes[70];
+            DeleteHands(hand);
+
+            var dd = new Dictionary<ushort, ushort>
+            {
+                [8] = 14,
+                [9] = 20,
+                [32] = 25,
+                [36] = 26,
+            };
+            foreach (var f in hand.TexturedRectangles.Concat(hand.TexturedTriangles))
+            {
+                for (int i = 0; i < f.Vertices.Count; i++)
+                {
+                    if (dd.TryGetValue(f.Vertices[i], out var m))
+                        f.Vertices[i] = m;
+                }
+            }
+            CleanupVertices(hand);
+        }
+
+        foreach (var m in new[] { 1, 37, 49 })
+        {
+            var rev = baseModel.Meshes[36];
+            var def = baseModel.Meshes[m].Clone();
+
+            var map = new Dictionary<ushort, ushort>();
+            for (ushort i = 8; i < rev.Vertices.Count; i++)
+            {
+                map[i] = (ushort)def.Vertices.Count;
+                def.Vertices.Add(rev.Vertices[i].Clone());
+                def.Normals.Add(rev.Normals[i].Clone());
+                if (m == 49)
+                {
+                    def.Vertices[^1].Y += 8;
+                    def.Vertices[^1].Z -= 6;
+                }
+            }
+
+            var faces = rev.TexturedFaces.Where(f => f.Vertices.All(v => v >= 8)).ToList();
+            foreach (var face in faces)
+            {
+                var ff = face.Clone();
+                for (int i = 0; i < ff.Vertices.Count; i++)
+                {
+                    ff.Vertices[i] = map[ff.Vertices[i]];
+                }
+                if (ff.Type == TRFaceType.Triangle)
+                    def.TexturedTriangles.Add(ff);
+                else
+                    def.TexturedRectangles.Add(ff);
+            }
+            baseModel.Meshes[m + 11] = def;
+        }
+
+        // fix uzis
+        foreach (var m in new[] { 34,35 })
+        {
+            var gun = baseModel.Meshes[m];
+            var vs = new ushort[] { 8, 12, 9, 13 };
+            var badf1 = gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            vs = [16,17,20,21];
+            var badf2 = gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+
+            vs = [11,15,8,12];
+            var goodf1 = gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            badf1.Texture = goodf1.Texture;
+            badf1.Rotate(m == 34 ? 3 : 2);
+
+            vs = [10,11,12,13];
+            var goodf2 = baseModel.Meshes[68].TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            badf2.Texture = goodf2.Texture;
+            if (m == 35)
+                badf2.Rotate(1);
+
+            vs = [18,23,19,21];
+            var ff = baseModel.Meshes[68].TexturedTriangles.Find(f => f.Vertices.All(vs.Contains)).Texture;
+            var ob = level.ObjectTextures[ff];
+            ff = (ushort)level.ObjectTextures.Count;
+            level.ObjectTextures.Add(new(ob.Bounds)
+            {
+                Atlas = ob.Atlas,
+            });
+
+
+            vs = [24,25,28,29];
+            var om = gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            vs = [24,25,26,27,28,29,30,31];
+            gun.TexturedRectangles.FindAll(f => f != om && f.Vertices.All(vs.Contains))
+                .ForEach(f =>
+                {
+                    f.Texture = ff;
+                    if (m == 35)
+                        f.Rotate(1);
+                });
+        }
+
+        foreach (var m in new[] { 1,2, 37,38, 49,50 })
+        {
+            var rev = baseModel.Meshes[35 - (m & 1)];
+            var def = baseModel.Meshes[m].Clone();
+
+            var map = new Dictionary<ushort, ushort>();
+            for (ushort i = 8; i < rev.Vertices.Count; i++)
+            {
+                map[i] = (ushort)def.Vertices.Count;
+                def.Vertices.Add(rev.Vertices[i].Clone());
+                def.Normals.Add(rev.Normals[i].Clone());
+                if (m == 49 || m == 50)
+                {
+                    def.Vertices[^1].Y += 8;
+                    def.Vertices[^1].Z -= 6;
+                }
+            }
+
+            var faces = rev.TexturedFaces.Where(f => f.Vertices.All(v => v >= 8)).ToList();
+            foreach (var face in faces)
+            {
+                var ff = face.Clone();
+                for (int i = 0; i < ff.Vertices.Count; i++)
+                {
+                    ff.Vertices[i] = map[ff.Vertices[i]];
+                }
+                if (ff.Type == TRFaceType.Triangle)
+                    def.TexturedTriangles.Add(ff);
+                else
+                    def.TexturedRectangles.Add(ff);
+            }
+            baseModel.Meshes[m + 9] = def;
+        }
+
+        var frame = baseModel.Animations[0].Frames[0];
+        frame.Rotations.Clear();
+        frame.Rotations.AddRange(Enumerable.Repeat(0, baseModel.Meshes.Count).Select(i => new TRAnimFrameRotation()));
+
+        foreach (var t in new[] { 335,336,337 })
+            BackportTR4Guns(level, (TR2Type)t);
+    }
+
+    static void BackportTR4Guns(TR2Level level, TR2Type type)
+    {
+        var guns4 = level.Models[_laraSkinGuns4];
+        var baseModel = level.Models[type];
+
+        foreach (var v in new[] { 62, 53, 42, 31, 20, 9 })
+        {
+            baseModel.MeshTrees[v + 1].Flags = _read;
+            baseModel.MeshTrees.Insert(v + 2, new() { OffsetZ = v == 62 ? 750 : 900, Flags = _pop });
+            baseModel.Meshes.Insert(v + 3, baseModel.Meshes[v].Clone());
+        }
+        {
+            baseModel.MeshTrees[76].Flags = _read;
+            baseModel.MeshTrees.Insert(77, new() { OffsetZ = 426, OffsetX = -148, Flags = _pop });
+            baseModel.Meshes.Insert(78, baseModel.Meshes[74].Clone());
+        }
+        {
+            baseModel.MeshTrees[83].Flags = _read;
+            baseModel.MeshTrees.Add(new() { OffsetZ = 768, Flags = _pop });
+            baseModel.Meshes.Add(baseModel.Meshes[81].Clone());
+        }
+
+        foreach (var m in new[] { 12,36,48,60,70,78,85 })
+            baseModel.Meshes[m] = guns4.Meshes[m].Clone();
+
+        if (type == (TR2Type)335)
+        {
+            foreach (var m in new[] { 12,36,48,60 })
+            {
+                var rev = baseModel.Meshes[m];
+                var def = baseModel.Meshes[m - 11];
+                for (int i = 0; i < 8; i++)
+                    rev.Vertices[i] = def.Vertices[i].Clone();
+
+                rev.TexturedRectangles.RemoveAll(f => f.Vertices.All(v => v < 8));
+                rev.TexturedTriangles.RemoveAll(f => f.Vertices.All(v => v < 8));
+
+                def.TexturedFaces.Where(f => f.Vertices.All(v => v < 8))
+                    .Select(f => f.Clone())
+                    .ToList().ForEach(f =>
+                {
+                    (f.Type == TRFaceType.Triangle ? rev.TexturedTriangles : rev.TexturedRectangles).Add(f);
+                });
+            }
+        }
+
+        var frame = baseModel.Animations[0].Frames[0];
+        frame.Rotations.Clear();
+        frame.Rotations.AddRange(Enumerable.Repeat(0, baseModel.Meshes.Count).Select(i => new TRAnimFrameRotation()));
+    }
+
     static void DoJoints(TR2Level baseLevel)
     {
         var map = new Dictionary<TR2Type, string>
@@ -6917,6 +7317,8 @@ public class Legacy
             FixTR1PistolTransparency(baseLevel);
             FixTR2Bomber(baseLevel, baseModel1.Meshes.GetRange(10 * 15 + 1, 15), baseModel2.Meshes.GetRange(136, 15));
             SplitModels(baseLevel);
+
+            DoTR4Guns(baseLevel);
 
             Repack(baseLevel, pad);
             _reader2.Write(baseLevel, "outfits_raw.tr2");
