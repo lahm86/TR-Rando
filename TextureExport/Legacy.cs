@@ -5245,6 +5245,11 @@ public class Legacy
         baseModel.Meshes[66] = gunModel.Meshes[64].Clone(); // Flare
     }
 
+    private static ushort _uziHolsterA = ushort.MaxValue;
+    private static ushort _uziHolsterB = ushort.MaxValue;
+    private static ushort _uziHolsterC = ushort.MaxValue;
+    private static ushort _uziHolsterD = ushort.MaxValue;
+
     static void DoTR4Guns(TR2Level level)
     {
         var baseModel = level.Models[_laraSkinGuns4];
@@ -5550,6 +5555,86 @@ public class Legacy
                     if (m == 35)
                         f.Rotate(1);
                 });
+
+            vs = [12,13,14,15];
+            goodf1 = baseModel.Meshes[68].TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            vs = [9,10,13,15];
+            goodf2 = baseModel.Meshes[68].TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+
+            vs = [20,21,22,23];
+            gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture = goodf1.Texture;
+            vs = [16,17,18,19];
+            gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture = goodf1.Texture;
+
+            vs = [16,19,20,23];
+            gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture = goodf2.Texture;
+            vs = [17,18,21,22];
+            gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture = goodf2.Texture;
+
+            if (m == 34)
+            {
+                vs = [12, 13, 14, 15];
+                var t1 = gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+                vs = [4,5,6,7];
+                var t2 = baseModel.Meshes[68].TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+                var tobj1 = level.ObjectTextures[t1.Texture];
+                var tobj2 = level.ObjectTextures[t2.Texture];
+
+                var newTobj = new TRObjectTexture(tobj2.Position.X, tobj2.Position.Y, tobj1.Size.Width, tobj1.Size.Height);
+                newTobj.Atlas = tobj2.Atlas;
+                newTobj.UVMode = tobj1.UVMode;
+                t1.Texture = (ushort)level.ObjectTextures.Count;
+                _uziHolsterA = t1.Texture;
+                level.ObjectTextures.Add(newTobj);
+
+                vs = [11,8,9,10];
+                var t3 = gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+                var tobj3 = level.ObjectTextures[t3.Texture];
+                newTobj = newTobj.Clone();
+                newTobj.UVMode = tobj3.UVMode;
+                t3.Texture = (ushort)level.ObjectTextures.Count;
+                _uziHolsterB = t3.Texture;
+                level.ObjectTextures.Add(newTobj);
+
+                vs = [12,8,15,11];
+                var t4 = gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+                vs = [1,2,4,7];
+                var t5 = baseModel.Meshes[68].TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+                t4.Texture = t5.Texture;
+                _uziHolsterC = t4.Texture;
+
+                vs = [8,12,9,13];
+                var t6 = gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+                vs = [2,3,4,5];
+                var t7 = baseModel.Meshes[68].TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+                var tobj6 = level.ObjectTextures[t6.Texture];
+                var tobj7 = level.ObjectTextures[t7.Texture];
+                newTobj = new TRObjectTexture(tobj7.Position.X, tobj7.Position.Y, 16, tobj6.Size.Height);
+                newTobj.Atlas = tobj7.Atlas;
+                newTobj.UVMode = tobj6.UVMode;
+                t6.Texture = (ushort)level.ObjectTextures.Count;
+                _uziHolsterD = t6.Texture;
+                level.ObjectTextures.Add(newTobj);
+                t6.Rotate(1);
+            }
+            else
+            {
+                vs = [12, 13, 14, 15];
+                gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture = _uziHolsterA;
+                vs = [8,9,10,11];
+                gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture = _uziHolsterB;
+                vs = [8,11,12,15];
+                gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture = _uziHolsterC;
+                vs = [12,8,13,9];
+                gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Texture = _uziHolsterD;
+                gun.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains)).Rotate(1);
+                gun.Vertices[22].Z += 2;
+                gun.Vertices[14].Y += 1;
+            }
+
+            gun.Vertices[19].Z += 1;
+            gun.Vertices[23].Z += 1;
+            gun.Vertices[14].Y += 1;
         }
 
         foreach (var m in new[] { 1,2, 37,38, 49,50 })
@@ -5643,6 +5728,390 @@ public class Legacy
         var frame = baseModel.Animations[0].Frames[0];
         frame.Rotations.Clear();
         frame.Rotations.AddRange(Enumerable.Repeat(0, baseModel.Meshes.Count).Select(i => new TRAnimFrameRotation()));
+    }
+
+    static void FixTR23UzisAgain(TR2Level level)
+    {
+        var baseModel = level.Models[(TR2Type)336];
+
+        {
+            var gun = baseModel.Meshes[34];
+            var gun2 = baseModel.Meshes[68];
+
+            foreach (var v in new[] { 23, 17, 19, 21 })
+            {
+                gun.Vertices.Add(gun.Vertices[v].Clone());
+                gun.Normals.Add(gun.Normals[v].Clone());
+
+                var vt = gun.Vertices[^1];
+
+                if (v == 23)
+                {
+                    vt.Y -= 2;
+                }
+                else if (v == 17)
+                {
+                    vt.Y -= 2;
+                }
+                else if (v == 19)
+                {
+                    vt.Y += 2;
+                }
+                else
+                {
+                    vt.Y += 2;
+                }
+
+                gun.Vertices.Add(vt.Clone());
+                gun.Normals.Add(gun.Normals[^1].Clone());
+                gun.Vertices[^1].Z -= 40;
+                gun.Vertices[^1].X -= 4;
+            }
+
+            foreach (var v in new[] { 42, 44, 43, 45 })
+            {
+                gun.Vertices[v].X += 3;
+            }
+            foreach (var v in new[] { 40, 46, 41, 47 })
+            {
+                gun.Vertices[v].X -= 1;
+            }
+
+            foreach (var v in new[] { 16, 18, 20, 22, 17, 19, 21, 23 })
+            {
+                gun.Vertices[v].Z -= 40;
+                gun.Vertices[v].X -= 3;
+            }
+
+            var vs = new ushort[] { 12, 13, 14, 15 };
+            var f1 = gun2.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            vs = [9, 10, 13, 15];
+            var f2 = gun2.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f2.Texture,
+                Vertices = [40, 42, 43, 41],
+            });
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f1.Texture,
+                Vertices = [42, 44, 45, 43],
+            });
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f2.Texture,
+                Vertices = [44, 46, 47, 45],
+            });
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f1.Texture,
+                Vertices = [46, 40, 41, 47],
+            });
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f2.Texture,
+                Vertices = [41, 43, 45, 47],
+            });
+
+            foreach (var v in new[] { 12, 14, 13, 15 })
+            {
+                gun.Vertices[v].X += 3;
+                if (v == 14)
+                    gun.Vertices[v].Y -= 1;
+                if (v == 15)
+                {
+                    gun.Vertices[v].X += 2;
+                    gun.Vertices[v].Z -= 1;
+                    gun.Vertices[v].Y += 1;
+                }
+            }
+            foreach (var v in new[] { 8, 9, 10, 11 })
+            {
+                gun.Vertices[v].X -= 3;
+            }
+
+            CleanupVertices(gun);
+
+            foreach (var v in new[] {24,26,28,30,31,25,27,29,10,11,13,15,8,9,14,12,20,18,22,16,21,19,23,17 })
+            {
+                gun.Vertices[v].Y += 15;
+                if (v != 21 && v != 19 && v != 23 && v != 17)
+                    gun.Vertices[v].Z += 2;
+            }
+            gun.Vertices[20].Y -= 5;
+            gun.Vertices[18].Y -= 5;
+        }
+
+        {
+            var gun = baseModel.Meshes[35];
+            var gun2 = baseModel.Meshes[69];
+
+            foreach (var v in new[] { 19,23,17,20 })
+            {
+                gun.Vertices.Add(gun.Vertices[v].Clone());
+                gun.Normals.Add(gun.Normals[v].Clone());
+
+                var vt = gun.Vertices[^1];
+
+                if (v == 19 || v == 23)
+                {
+                    vt.Y -= 2;
+                }
+                else
+                {
+                    vt.Y += 2;
+                }
+
+                gun.Vertices.Add(vt.Clone());
+                gun.Normals.Add(gun.Normals[^1].Clone());
+                gun.Vertices[^1].Z -= 40;
+                gun.Vertices[^1].X += 4;
+            }
+
+            foreach (var v in new[] { 40, 44, 41, 45 })
+            {
+                gun.Vertices[v].X -= 3;
+            }
+            foreach (var v in new[] { 43, 42, 46, 47 })
+            {
+                gun.Vertices[v].X += 1;
+            }
+
+            foreach (var v in new[] { 16, 18, 20, 22, 17, 19, 21, 23 })
+            {
+                gun.Vertices[v].Z -= 40;
+                gun.Vertices[v].X += 3;
+            }
+
+            var vs = new ushort[] { 8,9,10,11 };
+            var f1 = gun2.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+            vs = [8,11,13,15];
+            var f2 = gun2.TexturedRectangles.Find(f => f.Vertices.All(vs.Contains));
+
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f2.Texture,
+                Vertices = [40, 42, 43, 41],
+            });
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f1.Texture,
+                Vertices = [42, 46, 47, 43],
+            });
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f2.Texture,
+                Vertices = [46, 44, 45, 47],
+            });
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f1.Texture,
+                Vertices = [44, 40, 41, 45],
+            });
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = f2.Texture,
+                Vertices = [41, 43, 47, 45],
+            });
+
+            foreach (var v in new[] { 12, 14, 13, 15 })
+            {
+                gun.Vertices[v].X -= 3;
+                if (v == 15)
+                    gun.Vertices[v].Y -= 1;
+                if (v == 14)
+                {
+                    gun.Vertices[v].X -= 2;
+                    gun.Vertices[v].Z -= 1;
+                    gun.Vertices[v].Y += 1;
+                }
+            }
+            foreach (var v in new[] { 8, 9, 10, 11 })
+            {
+                gun.Vertices[v].X += 3;
+                if(v == 11)
+                    gun.Vertices[v].Z -= 1;
+            }
+
+            CleanupVertices(gun);
+
+            foreach (var v in new[] {26,30,24,29,27,31,28,25,10,11,13,15,8,9,12,14,20,16,18,21,23,17,19,22 })
+            {
+                gun.Vertices[v].Y += 15;
+                if (v != 22 && v != 19 && v != 23 && v != 17)
+                    gun.Vertices[v].Z += 2;
+            }
+            gun.Vertices[22].X += 1;
+            gun.Vertices[20].Y -= 5;
+            gun.Vertices[16].Y -= 5;
+        }
+
+        // Fixes from TR4 uzis above
+        {
+            var gun = baseModel.Meshes[34];
+            var vs = new ushort[] { 21,22,23,20 };
+            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = _uziHolsterA,
+                Vertices = [20,21,23,22],
+            });
+            gun.TexturedRectangles[^1].Rotate(1);
+
+            vs = [16,17,18,19];
+            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = _uziHolsterB,
+                Vertices = [19,18,16,17],
+            });
+            gun.TexturedRectangles[^1].Rotate(3);
+
+            vs = [18,19,20,21];
+            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = _uziHolsterC,
+                Vertices = [20,18,19,21],
+            });
+            gun.TexturedRectangles[^1].Rotate(2);
+            
+            vs = [18,16,20,22];
+            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = _uziHolsterD,
+                Vertices = [18,20,22,16],
+            });
+            gun.TexturedRectangles[^1].Rotate(3);
+        }
+        {
+            var gun = baseModel.Meshes[35];
+            var vs = new ushort[] { 21,22,23,20 };
+            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = _uziHolsterB,
+                Vertices = [23,20,21,22],
+            });
+            gun.TexturedRectangles[^1].Rotate(3);
+
+            vs = [16, 17, 18, 19];
+            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = _uziHolsterA,
+                Vertices = [16,17,19,18],
+            });
+            gun.TexturedRectangles[^1].Rotate(1);
+
+            vs = [16,20,17,23];
+            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = _uziHolsterC,
+                Vertices = [16,20,23,17],
+            });
+            gun.TexturedRectangles[^1].Rotate(2);
+
+            vs = [20,16,18,21];
+            gun.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+            gun.TexturedRectangles.Add(new()
+            {
+                Type = TRFaceType.Rectangle,
+                Texture = _uziHolsterD,
+                Vertices = [20,16,18,21],
+            });
+            gun.TexturedRectangles[^1].Rotate(3);
+        }
+
+        var mapperoo = new Dictionary<int, List<int>>
+        {
+            [34] = [10,46,58],
+            [35] = [11,47,59],
+        };
+        foreach (var (t, f) in mapperoo)
+        {
+            var goodMesh = baseModel.Meshes[t];
+            foreach (var ff in f)
+            {
+                var badMesh = baseModel.Meshes[ff];
+                ushort[] vs;
+                if (t == 34)
+                {
+                    vs = [22,16,20,18,23,17,19,21,10,12,8,13,11,14,15,9];
+                }
+                else
+                {
+                    vs = [18,22,16,21,19,23,17,20,8,12,10,13,9,15,11,14];
+                }
+                badMesh.TexturedRectangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+                badMesh.TexturedTriangles.RemoveAll(f => f.Vertices.All(vs.Contains));
+
+                if (t == 34)
+                {
+                    vs = [24,26,28,30,31,25,27,29,10,11,13,15,8,9,14,12,20,18,22,16,21,19,23,17];
+                }
+                else
+                {
+                    vs = [26,30,24,29,27,31,28,25,10,11,13,15,8,9,12,14,20,16,18,21,23,17,19,22];
+                }
+
+                var map = new Dictionary<ushort, ushort>();
+                foreach (var v in vs)
+                {
+                    map[v] = (ushort)badMesh.Vertices.Count;
+                    badMesh.Vertices.Add(goodMesh.Vertices[v].Clone());
+                    badMesh.Normals.Add(goodMesh.Normals[v].Clone());
+                }
+
+                foreach (var ft in goodMesh.TexturedFaces.Where(f => f.Vertices.All(vs.Contains)).Select(f => f.Clone()))
+                {
+                    for (int i = 0; i < ft.Vertices.Count; i++)
+                    {
+                        ft.Vertices[i] = map[ft.Vertices[i]];
+                    }
+                    if (ft.Type == TRFaceType.Triangle)
+                        badMesh.TexturedTriangles.Add(ft);
+                    else
+                        badMesh.TexturedRectangles.Add(ft);
+                }
+
+                CleanupVertices(badMesh);
+            }
+        }
+
+        var model3 = level.Models[(TR2Type)337];
+        foreach (var m in mapperoo.Keys.Concat(mapperoo.Values.SelectMany(v => v)))
+        {
+            model3.Meshes[m] = baseModel.Meshes[m].Clone();
+        }
+    }
+
+    static void FixHandsAgain(TR2Level level)
+    {
+        var m1 = level.Models[(TR2Type)308];
+        var m2 = level.Models[(TR2Type)309];
+        m1.Meshes[10] = m2.Meshes[10].Clone();
+        m1.Meshes[13] = m2.Meshes[13].Clone();
     }
 
     static void DoJoints(TR2Level baseLevel)
@@ -7319,6 +7788,8 @@ public class Legacy
             SplitModels(baseLevel);
 
             DoTR4Guns(baseLevel);
+            FixTR23UzisAgain(baseLevel);
+            FixHandsAgain(baseLevel);
 
             Repack(baseLevel, pad);
             _reader2.Write(baseLevel, "outfits_raw.tr2");
