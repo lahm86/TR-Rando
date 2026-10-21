@@ -5250,6 +5250,93 @@ public class Legacy
     private static ushort _uziHolsterC = ushort.MaxValue;
     private static ushort _uziHolsterD = ushort.MaxValue;
 
+    static void DoLasers(TR2Level level)
+    {
+        var baseModel = level.Models[_laraSkinGuns4];        
+        {
+            baseModel.MeshTrees[77].Flags = _read;
+            baseModel.MeshTrees.Insert(78, new() { OffsetZ = 526, OffsetX = -148, Flags = _pop });
+            baseModel.Meshes.Insert(79, baseModel.Meshes[78].Clone());
+        }
+        {
+            baseModel.MeshTrees[69].Flags = _read;
+            baseModel.MeshTrees.Insert(70, new() { OffsetZ = 750, OffsetX = -84, Flags = _pop });
+            baseModel.Meshes.Insert(71, baseModel.Meshes[70].Clone());
+        }
+
+        {
+            var seth = ReadTR4($@"F:\tomp\all levels\tr4\{TR4LevelNames.SETH}");
+            seth.Models[TR4Type.LaraRevolverLaser].Meshes =
+            [
+                seth.Models[TR4Type.LaraRevolverLaser].Meshes[10],
+            ];
+            var tmpModel = MakeBaseModel();
+            Import(level, tmpModel, seth, seth.Models[TR4Type.LaraRevolverLaser], null);
+
+            var las = tmpModel.Meshes[1];
+            var gun = baseModel.Meshes[71];
+
+            var map = new Dictionary<ushort, ushort>();
+            for (ushort i = 42; i < las.Vertices.Count; i++)
+            {
+                map[i] = (ushort)gun.Vertices.Count;
+                gun.Vertices.Add(las.Vertices[i].Clone());
+                gun.Normals.Add(las.Normals[i].Clone());
+            }
+
+            var faces = las.TexturedFaces.Where(f => f.Vertices.All(v => v >= 42)).ToList();
+            foreach (var face in faces)
+            {
+                var ff = face.Clone();
+                for (int i = 0; i < ff.Vertices.Count; i++)
+                {
+                    ff.Vertices[i] = map[ff.Vertices[i]];
+                }
+                if (ff.Type == TRFaceType.Triangle)
+                    gun.TexturedTriangles.Add(ff);
+                else
+                    gun.TexturedRectangles.Add(ff);
+            }
+        }
+
+        {
+            var seth = ReadTR4($@"F:\tomp\all levels\tr4\{TR4LevelNames.SETH}");
+            seth.Models[TR4Type.LaraCrossbowLaser].Meshes =
+            [
+                seth.Models[TR4Type.LaraCrossbowLaser].Meshes[10],
+            ];
+            var tmpModel = MakeBaseModel();
+            Import(level, tmpModel, seth, seth.Models[TR4Type.LaraCrossbowLaser], null);
+
+            var las = tmpModel.Meshes[1];
+            var gun = baseModel.Meshes[80];
+
+            var map = new Dictionary<ushort, ushort>();
+            for (ushort i = 70; i < las.Vertices.Count; i++)
+            {
+                map[i] = (ushort)gun.Vertices.Count;
+                gun.Vertices.Add(las.Vertices[i].Clone());
+                gun.Normals.Add(las.Normals[i].Clone());
+                if (i < 72)
+                    gun.Vertices[^1].Z--;
+            }
+
+            var faces = las.TexturedFaces.Where(f => f.Vertices.All(v => v >= 70)).ToList();
+            foreach (var face in faces)
+            {
+                var ff = face.Clone();
+                for (int i = 0; i < ff.Vertices.Count; i++)
+                {
+                    ff.Vertices[i] = map[ff.Vertices[i]];
+                }
+                if (ff.Type == TRFaceType.Triangle)
+                    gun.TexturedTriangles.Add(ff);
+                else
+                    gun.TexturedRectangles.Add(ff);
+            }
+        }
+    }
+
     static void DoTR4Guns(TR2Level level)
     {
         var baseModel = level.Models[_laraSkinGuns4];
@@ -5671,6 +5758,8 @@ public class Legacy
             baseModel.Meshes[m + 9] = def;
         }
 
+        DoLasers(level);
+
         var frame = baseModel.Animations[0].Frames[0];
         frame.Rotations.Clear();
         frame.Rotations.AddRange(Enumerable.Repeat(0, baseModel.Meshes.Count).Select(i => new TRAnimFrameRotation()));
@@ -5687,21 +5776,32 @@ public class Legacy
         foreach (var v in new[] { 62, 53, 42, 31, 20, 9 })
         {
             baseModel.MeshTrees[v + 1].Flags = _read;
-            baseModel.MeshTrees.Insert(v + 2, new() { OffsetZ = v == 62 ? 750 : 900, Flags = _pop });
+            baseModel.MeshTrees.Insert(v + 2, new() { OffsetZ = v == 62 ? 750 : 900, Flags = v == 62 ? _read : _pop });
             baseModel.Meshes.Insert(v + 3, baseModel.Meshes[v].Clone());
+            if (v == 62)
+            {
+                baseModel.MeshTrees.Insert(v + 3, new() { OffsetZ = 750, OffsetX = -84, Flags = _pop });
+                baseModel.Meshes.Insert(v + 4, baseModel.Meshes[v].Clone());
+            }
         }
         {
-            baseModel.MeshTrees[76].Flags = _read;
-            baseModel.MeshTrees.Insert(77, new() { OffsetZ = 426, OffsetX = -148, Flags = _pop });
-            baseModel.Meshes.Insert(78, baseModel.Meshes[74].Clone());
+            baseModel.MeshTrees[77].Flags = _read;
+            baseModel.MeshTrees.Insert(78, new() { OffsetZ = 426, OffsetX = -148, Flags = _read });
+            baseModel.Meshes.Insert(79, baseModel.Meshes[74].Clone());
+
+            baseModel.MeshTrees.Insert(79, new() { OffsetZ = 526, OffsetX = -148, Flags = _pop });
+            baseModel.Meshes.Insert(80, baseModel.Meshes[74].Clone());
         }
         {
-            baseModel.MeshTrees[83].Flags = _read;
+            baseModel.MeshTrees[85].Flags = _read;
             baseModel.MeshTrees.Add(new() { OffsetZ = 768, Flags = _pop });
             baseModel.Meshes.Add(baseModel.Meshes[81].Clone());
         }
 
-        foreach (var m in new[] { 12,36,48,60,70,78,85 })
+        Debug.Assert(baseModel.Meshes.Count == guns4.Meshes.Count);
+        Debug.Assert(baseModel.MeshTrees.Count == guns4.MeshTrees.Count);
+
+        foreach (var m in new[] { 12,36,48,60,70,71,79,80,87 })
             baseModel.Meshes[m] = guns4.Meshes[m].Clone();
 
         if (type == (TR2Type)335)

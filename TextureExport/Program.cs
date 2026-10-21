@@ -151,7 +151,7 @@ class Program
         foreach (var id in _gunMaps)
         {
             var model = level.Models[(TR2Type)id];
-            var trees = new[] { 25, 37, 49, 61, 71, 79 };
+            var trees = new[] { 25, 37, 49, 61, 72, 81 };
             foreach (var tree in trees)
                 model.MeshTrees[tree - 1].OffsetX += 286;
 
